@@ -14,7 +14,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   toward the global file so it stays out of source control.
 - Persistent coverage defaults: `coverage.open` (auto-open the report),
   `coverage.full` (full multi-file report), and `coverage.min` (default line gate).
-  The matching CLI flag always overrides the config default.
+  The matching CLI flag always overrides the config default. `rig info` now has a
+  `coverage defaults` row so a repo that silently gates at N% isn't a surprise.
 - `JsoncEditor`/`ConfigWriter` now write nested keys (e.g. `coverage.license`) and
   typed values (string/bool/number) to either config file, still preserving
   comments, formatting, and key order. (Also fixes a stale `$schema` URL written

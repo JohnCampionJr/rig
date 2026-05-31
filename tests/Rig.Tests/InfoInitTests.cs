@@ -37,4 +37,14 @@ public sealed class InfoInitTests
         using var t = new TempDir();
         InfoVerb.Execute(new RigSession(t.Path, new RigConfig())).Should().Be(0);
     }
+
+    [TestMethod]
+    public void Coverage_defaults_summary_lists_only_active_prefs()
+    {
+        InfoVerb.CoverageDefaults(null).Should().Be("(none)");
+        InfoVerb.CoverageDefaults(new CoverageConfig { License = "KEY" }).Should().Be("(none)"); // license has its own row
+        InfoVerb.CoverageDefaults(new CoverageConfig { Open = false, Full = false }).Should().Be("(none)");
+        InfoVerb.CoverageDefaults(new CoverageConfig { Min = 80, Open = true })
+            .Should().Be("min 80%, auto-open");
+    }
 }

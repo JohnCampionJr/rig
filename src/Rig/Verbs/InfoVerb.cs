@@ -63,6 +63,8 @@ internal static class InfoVerb
         Row("coverage collector", collector == CoverageVerb.CollectorMode.Mtp ? "MTP (--coverage)" : "VSTest (XPlat)");
         Row("coverage license", Set(session.Config.Coverage?.License) ? "set (Pro)" : "(none — free engine)",
             Origin(Set(repoCfg.Coverage?.License), Set(globalCfg.Coverage?.License)));
+        Row("coverage defaults", CoverageDefaults(session.Config.Coverage),
+            Origin(HasCoverageDefaults(repoCfg.Coverage), HasCoverageDefaults(globalCfg.Coverage)));
         Row("env files", EnvSummary(session));
         Row("custom commands", session.Config.Commands is { Count: > 0 } c ? string.Join(", ", c.Keys) : "(none)",
             Origin(Any(repoCfg.Commands), Any(globalCfg.Commands)));
@@ -78,6 +80,21 @@ internal static class InfoVerb
         if (ctx.ConfigPath is not null) WarnUnknownKeys(".rig.json", ctx.ConfigPath);
         if (hasGlobal) WarnUnknownKeys("~/.rig.json", globalConfig!);
         return 0;
+    }
+
+    private static bool HasCoverageDefaults(CoverageConfig? c) =>
+        c is not null && (c.Open is not null || c.Full is not null || c.Min is not null);
+
+    /// <summary>The persisted coverage prefs that are actually in effect (so a repo
+    /// that gates at N% isn't a surprise), or "(none)".</summary>
+    internal static string CoverageDefaults(CoverageConfig? c)
+    {
+        if (c is null) return "(none)";
+        var parts = new List<string>();
+        if (c.Min is { } m) parts.Add($"min {m:0.#}%");
+        if (c.Open == true) parts.Add("auto-open");
+        if (c.Full == true) parts.Add("full report");
+        return parts.Count > 0 ? string.Join(", ", parts) : "(none)";
     }
 
     private static void WarnUnknownKeys(string label, string path)
