@@ -171,6 +171,14 @@ internal sealed class InitCommand : Command
     }
 }
 
+internal sealed class SetupCommand : Command
+{
+    public SetupCommand() : base("setup", "Interactive walkthrough to set local/global preferences")
+    {
+        SetAction(pr => SetupVerb.Execute(Cli.Session(pr)));
+    }
+}
+
 internal sealed class CompletionCommand : Command
 {
     private readonly Argument<string?> _shell = new("shell") { Arity = ArgumentArity.ZeroOrOne, Description = "zsh | bash | pwsh" };

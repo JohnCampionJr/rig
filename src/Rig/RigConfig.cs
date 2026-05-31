@@ -93,6 +93,9 @@ internal sealed class RigConfig
             Settings = Coalesce(overlay.Settings, baseCfg.Settings),
             Collector = Coalesce(overlay.Collector, baseCfg.Collector),
             License = Coalesce(overlay.License, baseCfg.License),
+            Open = overlay.Open ?? baseCfg.Open,
+            Full = overlay.Full ?? baseCfg.Full,
+            Min = overlay.Min ?? baseCfg.Min,
         };
     }
 
@@ -176,6 +179,9 @@ internal sealed class CoverageConfig
     public string? Settings { get; set; }
     public string? Collector { get; set; } // auto | mtp | xplat
     public string? License { get; set; }    // ReportGenerator Pro key → REPORTGENERATOR_LICENSE
+    public bool? Open { get; set; }          // default: open the report (== always passing --open)
+    public bool? Full { get; set; }          // default: full multi-file report (== --full)
+    public double? Min { get; set; }         // default line-coverage gate (== --min); CLI --min overrides
 }
 
 internal sealed class KillConfig

@@ -96,4 +96,77 @@ public sealed class JsoncEditorTests
     {
         JsoncEditor.TrySetTopLevelString("{ not json", "x", "y", out _).Should().BeFalse();
     }
+
+    // ---- Nested (depth-2) + typed writes ----
+
+    [TestMethod]
+    public void Replaces_a_nested_value_and_keeps_sibling_keys_and_comments()
+    {
+        var src = """
+            {
+              // coverage prefs
+              "coverage": { "license": "OLD", "collector": "mtp" },
+              "defaultProject": "App"
+            }
+            """;
+
+        JsoncEditor.TrySet(src, ["coverage", "license"], "\"NEW\"", out var result).Should().BeTrue();
+
+        result.Should().Contain("\"license\": \"NEW\"");
+        result.Should().NotContain("OLD");
+        result.Should().Contain("\"collector\": \"mtp\"");   // sibling kept
+        result.Should().Contain("// coverage prefs");         // comment kept
+        var cov = RigConfig.Parse(result).Coverage!;
+        cov.License.Should().Be("NEW");
+        cov.Collector.Should().Be("mtp");
+    }
+
+    [TestMethod]
+    public void Inserts_a_nested_key_into_an_existing_parent_object()
+    {
+        var src = """
+            {
+              "coverage": { "license": "KEY" }
+            }
+            """;
+
+        JsoncEditor.TrySet(src, ["coverage", "open"], "true", out var result).Should().BeTrue();
+
+        var cov = RigConfig.Parse(result).Coverage!;
+        cov.License.Should().Be("KEY"); // existing sibling intact
+        cov.Open.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void Creates_the_parent_object_when_absent()
+    {
+        var src = """
+            {
+              "defaultProject": "App"
+            }
+            """;
+
+        JsoncEditor.TrySet(src, ["coverage", "min"], "80", out var result).Should().BeTrue();
+
+        var cfg = RigConfig.Parse(result);
+        cfg.DefaultProject.Should().Be("App"); // untouched
+        cfg.Coverage!.Min.Should().Be(80);
+    }
+
+    [TestMethod]
+    public void Creates_nested_key_in_an_empty_root_and_empty_parent()
+    {
+        JsoncEditor.TrySet("{}", ["coverage", "open"], "true", out var fromEmptyRoot).Should().BeTrue();
+        RigConfig.Parse(fromEmptyRoot).Coverage!.Open.Should().BeTrue();
+
+        JsoncEditor.TrySet("""{ "coverage": {} }""", ["coverage", "full"], "true", out var fromEmptyParent).Should().BeTrue();
+        RigConfig.Parse(fromEmptyParent).Coverage!.Full.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public void Refuses_to_clobber_a_non_object_parent()
+    {
+        // "coverage" is a string here — merging a child would destroy it, so bail.
+        JsoncEditor.TrySet("""{ "coverage": "oops" }""", ["coverage", "open"], "true", out _).Should().BeFalse();
+    }
 }

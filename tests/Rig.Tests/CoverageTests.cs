@@ -15,6 +15,24 @@ public sealed class CoverageTests
     }
 
     [TestMethod]
+    public void ResolveOptions_lets_cli_flags_win_over_config_defaults()
+    {
+        var cfg = new CoverageConfig { Open = true, Full = true, Min = 70 };
+
+        // config supplies the defaults when the CLI doesn't pass the flag
+        CoverageVerb.ResolveOptions(cliFull: false, cliOpen: false, cliMin: null, cfg)
+            .Should().Be((true, true, (double?)70));
+
+        // an explicit --min overrides the config default; bool flags only add
+        CoverageVerb.ResolveOptions(cliFull: false, cliOpen: false, cliMin: 90, cfg)
+            .Should().Be((true, true, (double?)90));
+
+        // no config → CLI values pass through untouched
+        CoverageVerb.ResolveOptions(cliFull: true, cliOpen: false, cliMin: null, config: null)
+            .Should().Be((true, false, (double?)null));
+    }
+
+    [TestMethod]
     public void Collector_respects_explicit_config()
     {
         CoverageVerb.DetectCollector(null, "mtp").Should().Be(CoverageVerb.CollectorMode.Mtp);

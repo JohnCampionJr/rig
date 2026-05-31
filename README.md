@@ -38,6 +38,7 @@ be inferred.
 | `default [project]` | `def` | Show or set the default run project (no run) |
 | `info` | `i` | Show what rig discovered/resolved for this repo |
 | `init` | — | Scaffold a commented `.rig.json` |
+| `setup` | — | Interactive walkthrough — set local/global prefs without hand-editing |
 | `completion <shell>` | `comp` | Print self-contained shell-completion setup (zsh/bash/pwsh) |
 
 Bare `rig` opens an interactive menu. Any **unambiguous prefix** of a verb also
@@ -60,9 +61,10 @@ targets. What's left is only what can't be inferred:
 }
 ```
 
-`rig init` scaffolds this; `rig run --remember` / `rig default <p>` write
-`defaultProject` for you (comment-preserving). `.env` / `.env.local` are loaded
-automatically (dotenv precedence).
+`rig init` scaffolds this; `rig setup` walks you through the settable prefs and
+writes them to the repo or user-wide file for you; `rig run --remember` /
+`rig default <p>` write `defaultProject` (all comment-preserving). `.env` /
+`.env.local` are loaded automatically (dotenv precedence).
 
 ### User-wide config (`~/.rig.json`)
 
@@ -86,8 +88,10 @@ Coverage renders in-process via the bundled **ReportGenerator** — no separate
 install. Single-file inline report by default, `--full` for the multi-file report,
 `--open` to open it; the headline `line %·branch %` prints to the console.
 `--min <pct>` gates line coverage (non-zero exit if below — handy in CI).
-ReportGenerator **Pro** features unlock via the `REPORTGENERATOR_LICENSE` env var
-(or `.rig.json` `coverage.license`) — `rig` bundles only the free Apache-2.0 engine.
+Persist any of these as defaults in `.rig.json` — `coverage.open`, `coverage.full`,
+`coverage.min` (the matching CLI flag always wins). ReportGenerator **Pro** features
+unlock via the `REPORTGENERATOR_LICENSE` env var (or `.rig.json` `coverage.license`)
+— `rig` bundles only the free Apache-2.0 engine.
 
 ## Completion
 

@@ -89,8 +89,17 @@ internal static class CoverageVerb
     internal static bool MeetsMinimum(double? lineRate, double? minPercent) =>
         minPercent is not { } min || (lineRate is { } rate && rate * 100 >= min);
 
+    /// <summary>Fold the per-repo/global <c>coverage</c> defaults into the CLI
+    /// flags: a passed flag always wins, config supplies the default otherwise.</summary>
+    public static (bool Full, bool Open, double? Min) ResolveOptions(
+        bool cliFull, bool cliOpen, double? cliMin, CoverageConfig? config) =>
+        (cliFull || config?.Full == true,
+         cliOpen || config?.Open == true,
+         cliMin ?? config?.Min);
+
     public static int Execute(RigSession session, string? name, bool full, bool open, double? min = null)
     {
+        (full, open, min) = ResolveOptions(full, open, min, session.Config.Coverage);
         ProjectDiscovery.WarnMultipleSolutions(session.Root, session.Config.Solution);
         var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
         var testProject = TestVerb.ResolveTestProject(session, projects);

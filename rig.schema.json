@@ -46,6 +46,18 @@
         "license": {
           "type": "string",
           "description": "ReportGenerator Pro key, forwarded to the REPORTGENERATOR_LICENSE env var."
+        },
+        "open": {
+          "type": "boolean",
+          "description": "Always open the report after `rig coverage` (same as passing --open)."
+        },
+        "full": {
+          "type": "boolean",
+          "description": "Default to the full multi-file report (same as passing --full)."
+        },
+        "min": {
+          "type": "number",
+          "description": "Default minimum line-coverage % gate (same as --min); the CLI flag overrides."
         }
       }
     },

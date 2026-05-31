@@ -7,6 +7,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- `rig setup` — an interactive walkthrough that shows what rig auto-detects, then
+  lets you set the few things it can't infer (default project, ReportGenerator Pro
+  license, coverage prefs) into either the repo's `.rig.json` or your user-wide
+  `~/.rig.json`, comment-preserving. The license prompt is masked and steers you
+  toward the global file so it stays out of source control.
+- Persistent coverage defaults: `coverage.open` (auto-open the report),
+  `coverage.full` (full multi-file report), and `coverage.min` (default line gate).
+  The matching CLI flag always overrides the config default.
+- `JsoncEditor`/`ConfigWriter` now write nested keys (e.g. `coverage.license`) and
+  typed values (string/bool/number) to either config file, still preserving
+  comments, formatting, and key order. (Also fixes a stale `$schema` URL written
+  into brand-new config files.)
 - `rig coverage --min <pct>` fails with a non-zero exit when line coverage is
   below the threshold — useful in CI and as a local pre-push gate.
 - `rig info` now flags unknown/typo'd top-level `.rig.json` keys (with a "did you

@@ -87,7 +87,7 @@ public sealed class RigConfigTests
                 "project": "tests/App.Tests/App.Tests.csproj",
                 "envPresets": { "log": { "APP_LOG": "1" } }
               },
-              "coverage": { "settings": "cov.runsettings", "collector": "auto", "license": "KEY" },
+              "coverage": { "settings": "cov.runsettings", "collector": "auto", "license": "KEY", "open": true, "full": false, "min": 80 },
               "kill": { "match": ["App.Desktop"] },
               "rebuild": { "skip": ["vendor", "node_modules"] },
               "publish": { "rid": "osx-arm64", "selfContained": true, "singleFile": false, "output": "dist/{rid}" },
@@ -101,6 +101,9 @@ public sealed class RigConfigTests
         cfg.Test.EnvPresets!["log"]["APP_LOG"].Should().Be("1");
         cfg.Coverage!.License.Should().Be("KEY");
         cfg.Coverage.Collector.Should().Be("auto");
+        cfg.Coverage.Open.Should().BeTrue();
+        cfg.Coverage.Full.Should().BeFalse();
+        cfg.Coverage.Min.Should().Be(80);
         cfg.Kill!.Match.Should().ContainSingle().Which.Should().Be("App.Desktop");
         cfg.Rebuild!.Skip.Should().BeEquivalentTo("vendor", "node_modules");
         cfg.Publish!.Rid.Should().Be("osx-arm64");

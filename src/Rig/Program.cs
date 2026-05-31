@@ -46,6 +46,7 @@ static RootCommand BuildRoot()
         new DefaultCommand(),
         new InfoCommand(),
         new InitCommand(),
+        new SetupCommand(),
         new CompletionCommand(),
     ];
     foreach (var c in builtins) root.Subcommands.Add(c);
