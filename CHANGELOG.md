@@ -19,6 +19,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the "stop everything I started" behavior.
 
 ### Changed
+- The interactive menu is reorganized: the everyday loop (`run`, `build`, `test`,
+  `coverage`, `kill`, `publish`) stays at the top level, and the long tail moves
+  into grouped `▸` sub-menus — **Watch** (run/test/build), **Maintenance**
+  (rebuild/restore/clean/format/outdated), and **Config** (default/info/setup) —
+  trimming the top menu from ~16 rows to ~10.
 - `rig kill` on Windows now matches the **full command line** via CIM
   (`Win32_Process.CommandLine`) and kills each match's process tree (`taskkill /T`),
   matching the Unix `pkill -f` behavior. Previously it matched only the image name

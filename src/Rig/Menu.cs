@@ -22,14 +22,15 @@ internal static class Menu
 
         var caps = ProbeCapabilities();
         var (runnable, defaultProject) = LoadRunnable();
-        var verbs = root.Subcommands
-            .Select(c => c.Name)
-            .Where(n => n is not "completion" and not "init" and not "add") // shell/arg-required verbs aren't menu items
-            .Append("watch") // synthetic: opens a sub-menu of watchable verbs
-            .Append("quit")
+
+        // Curated top level: the everyday loop plus grouped sub-menus (▸) for the
+        // long tail, so the menu stays short instead of listing every verb.
+        var present = root.Subcommands.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        string[] primary = ["run", "build", "test", "coverage", "kill", "publish"];
+        var top = primary.Where(present.Contains)
+            .Concat(["watch", "maintenance", "config", "quit"])
             .ToList();
 
-        // Loop: unavailable rows are greyed with a reason and re-prompt on pick.
         while (true)
         {
             var pick = AnsiConsole.Prompt(
@@ -37,43 +38,72 @@ internal static class Menu
                     .Title("What would you like to do?")
                     .PageSize(20)
                     .UseConverter(v => Label(v, caps))
-                    .AddChoices(verbs));
+                    .AddChoices(top));
 
             if (pick == "quit") return 0;
 
             if (pick == "watch")
             {
                 var chosen = WatchSubmenu(caps);
-                if (chosen is null) continue; // back
-                return root.Parse([chosen, "--watch"]).Invoke();
+                if (chosen is not null) return root.Parse([chosen, "--watch"]).Invoke();
+                continue; // back
             }
-
-            var reason = caps?.Unavailable(pick);
-            if (reason is not null)
+            if (pick == "maintenance")
             {
-                Ui.Warn($"{pick} is unavailable: {reason}.");
+                if (Category(root, "Maintenance", ["rebuild", "restore", "clean", "format", "outdated"], caps, runnable, defaultProject) is { } code) return code;
+                continue;
+            }
+            if (pick == "config")
+            {
+                if (Category(root, "Config", ["default", "info", "setup"], caps, runnable, defaultProject) is { } code) return code;
                 continue;
             }
 
-            // run/publish target a project — surface the choices (default marked)
-            // instead of silently firing the default.
-            if (pick is "run" or "publish")
-            {
-                var project = ProjectSubmenu($"{(pick == "run" ? "Run" : "Publish")} which project?", runnable, defaultProject);
-                if (project is null) continue; // back / none
-                return root.Parse([pick, project]).Invoke();
-            }
+            if (Dispatch(root, pick, caps, runnable, defaultProject) is { } rc) return rc;
+        }
+    }
 
-            // kill targets every runnable project (the bare sweep) or just one —
-            // surface that choice instead of silently sweeping.
-            if (pick == "kill")
-            {
-                var args = KillSubmenu(runnable, defaultProject);
-                if (args is null) continue; // back
-                return root.Parse(args).Invoke();
-            }
+    // Run a chosen verb: gate on availability, surface the project/kill picker for
+    // verbs that target a project, else re-enter the parser. Returns the exit code
+    // when something ran, or null to re-prompt (unavailable, or backed out).
+    private static int? Dispatch(RootCommand root, string verb, Capabilities? caps,
+        IReadOnlyList<string> runnable, string? defaultProject)
+    {
+        var reason = caps?.Unavailable(verb);
+        if (reason is not null) { Ui.Warn($"{verb} is unavailable: {reason}."); return null; }
 
-            return root.Parse(ArgsFor(pick)).Invoke();
+        if (verb is "run" or "publish")
+        {
+            var project = ProjectSubmenu($"{(verb == "run" ? "Run" : "Publish")} which project?", runnable, defaultProject);
+            return project is null ? null : root.Parse([verb, project]).Invoke();
+        }
+        if (verb == "kill")
+        {
+            var args = KillSubmenu(runnable, defaultProject);
+            return args is null ? null : root.Parse(args).Invoke();
+        }
+        return root.Parse(ArgsFor(verb)).Invoke();
+    }
+
+    // A grouped sub-menu (Maintenance ▸, Config ▸): pick a verb and dispatch it, or
+    // go back. Returns the exit code when a verb ran; null on back.
+    private static int? Category(RootCommand root, string title, string[] verbs, Capabilities? caps,
+        IReadOnlyList<string> runnable, string? defaultProject)
+    {
+        var present = root.Subcommands.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var choices = verbs.Where(present.Contains).Append("back").ToList();
+        while (true)
+        {
+            var pick = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title($"{title} [grey]▸[/]")
+                    .PageSize(20)
+                    .UseConverter(v => v == "back" ? "[grey]← back[/]" : Label(v, caps))
+                    .AddChoices(choices));
+
+            if (pick == "back") return null;
+            if (Dispatch(root, pick, caps, runnable, defaultProject) is { } code) return code;
+            // unavailable / backed out of a picker → re-prompt this category
         }
     }
 
@@ -187,6 +217,8 @@ internal static class Menu
     private static string Label(string verb, Capabilities? caps)
     {
         if (verb == "quit") return "[grey]quit[/]";
+        if (verb is "watch" or "maintenance" or "config") // grouped sub-menus
+            return $"{char.ToUpperInvariant(verb[0])}{verb[1..]} [grey]▸[/]";
         var reason = caps?.Unavailable(verb);
         return reason is null ? verb : $"[grey]{verb} ({reason})[/]";
     }
