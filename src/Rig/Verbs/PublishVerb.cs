@@ -19,22 +19,18 @@ internal static class PublishVerb
         return template.Replace("{rid}", rid);
     }
 
-    public static List<string> BuildArgs(string projectPath, PublishConfig? cfg, string rid, string outputDir)
-    {
-        var selfContained = cfg?.SelfContained ?? true;
-        var singleFile = cfg?.SingleFile ?? false;
-        return
-        [
-            "publish", projectPath,
-            "-c", "Release",
-            "-r", rid,
-            "--self-contained", selfContained ? "true" : "false",
-            $"-p:PublishSingleFile={(singleFile ? "true" : "false")}",
-            "-o", outputDir,
-        ];
-    }
+    public static List<string> BuildArgs(string projectPath, string configuration, string rid, bool selfContained, bool singleFile, string outputDir) =>
+    [
+        "publish", projectPath,
+        "-c", configuration,
+        "-r", rid,
+        "--self-contained", selfContained ? "true" : "false",
+        $"-p:PublishSingleFile={(singleFile ? "true" : "false")}",
+        "-o", outputDir,
+    ];
 
-    public static int Execute(RigSession session, string? query)
+    public static int Execute(RigSession session, string? query, string? configuration = null,
+        string? rid = null, bool? selfContained = null, bool? singleFile = null, string? output = null)
     {
         ProjectDiscovery.WarnMultipleSolutions(session.Root, session.Config.Solution);
         var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
@@ -47,13 +43,22 @@ internal static class PublishVerb
             return 1;
         }
 
-        var rid = ResolveRid(session.Config.Publish);
-        var output = Path.Combine(session.Root, ResolveOutput(session.Config.Publish, rid));
-        var args = BuildArgs(resolution.Selected.FullPath, session.Config.Publish, rid, output);
+        // Precedence (matches coverage): CLI flag > config > built-in default.
+        var cfg = session.Config.Publish;
+        var effRid = !string.IsNullOrWhiteSpace(rid) ? rid! : ResolveRid(cfg);
+        var effConfig = !string.IsNullOrWhiteSpace(configuration) ? configuration!
+            : !string.IsNullOrWhiteSpace(cfg?.Configuration) ? cfg!.Configuration! : "Release";
+        var effSelfContained = selfContained ?? cfg?.SelfContained ?? true;
+        var effSingleFile = singleFile ?? cfg?.SingleFile ?? false;
+        var outputDir = Path.Combine(session.Root, !string.IsNullOrWhiteSpace(output)
+            ? output!.Replace("{rid}", effRid)
+            : ResolveOutput(cfg, effRid));
+        var args = BuildArgs(resolution.Selected.FullPath, effConfig, effRid, effSelfContained, effSingleFile, outputDir);
 
         Ui.Command("dotnet", args);
+        if (Exec.DryRun) return 0;
         var rc = Exec.Run("dotnet", args, session.Root, session.BuildEnv());
-        if (rc == 0) Ui.Success($"Published: {output}");
+        if (rc == 0) Ui.Success($"Published: {outputDir}");
         return rc;
     }
 }

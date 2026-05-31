@@ -54,7 +54,7 @@ internal static class RebuildVerb
         }
     }
 
-    public static int Execute(RigSession session, string[] forwarded, bool dryRun = false)
+    public static int Execute(RigSession session, string[] forwarded, bool dryRun = false, string? configuration = null)
     {
         var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
         var skip = session.Config.Rebuild?.Skip ?? [];
@@ -81,6 +81,6 @@ internal static class RebuildVerb
             }
         }
         Ui.Info($"removed {removed} bin/obj director{(removed == 1 ? "y" : "ies")}");
-        return BuildVerb.Execute(session, forwarded);
+        return BuildVerb.Execute(session, forwarded, configuration: configuration);
     }
 }

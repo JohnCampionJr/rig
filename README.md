@@ -29,12 +29,16 @@ be inferred.
 | Verb | Alias | What |
 |------|-------|------|
 | `run [project]` | `r` | Run a runnable project (`-w` watch, `-c` config, `-f` framework, `--launch-profile`; args after `--` go to the app) |
-| `build` | `b` | Build the solution (`-w` watch) |
-| `rebuild` | `rb` | Delete in-tree bin/obj (scoped to solution projects), then build (`--dry-run`) |
-| `test [name]` | `t` | Run tests; bare name → fuzzy class match; `~ = !~ !=` filter shorthand; `--log`, `-w`, `-f` framework |
-| `coverage [name]` | `c` | Tests + coverage; in-process HTML report; `--full`, `--open` |
-| `kill` | `k` | Terminate the app/test processes |
-| `publish [project]` | `pub` | Self-contained `dotnet publish` |
+| `build` | `b` | Build the solution (`-w` watch, `-c` config) |
+| `rebuild` | `rb` | Delete in-tree bin/obj (scoped to solution projects), then build (`-c`; `--dry-run` lists) |
+| `restore` | `res` | `dotnet restore` the solution |
+| `clean` | — | `dotnet clean` the solution (MSBuild-aware; lighter than rebuild) |
+| `format` | `fmt` | `dotnet format` the solution |
+| `test [name]` | `t` | Run tests; bare name → fuzzy class match; `~ = !~ !=` filter shorthand; `--log`, `-w`, `-f`, `-c` |
+| `coverage [name]` | `c` | Tests + coverage; in-process HTML report; `--full`, `--open`, `--min` |
+| `add <package>` | — | Add a NuGet package to the default/sole project (`--project` to target; args after `--` forward) |
+| `kill` | `k` | Terminate the app/test processes (`--dry-run` lists what would die) |
+| `publish [project]` | `pub` | Self-contained `dotnet publish` (`-c`/`-r`/`-o`/`--self-contained`/`--single-file`) |
 | `default [project]` | `def` | Show or set the default run project (no run) |
 | `info` | `i` | Show what rig discovered/resolved for this repo |
 | `init` | — | Scaffold a commented `.rig.json` |
@@ -43,7 +47,8 @@ be inferred.
 
 Bare `rig` opens an interactive menu. Any **unambiguous prefix** of a verb also
 resolves (`rig cove`, `rig reb`). **Watch** run/test/build either way: the option
-(`rig test -w`) or the leading modifier (`rig watch run`, `rig w r`).
+(`rig test -w`) or the leading modifier (`rig watch run`, `rig w r`). Global flags:
+`--dry-run`/`-n` (print what would run/change, don't do it) and `--quiet`/`-q`.
 
 ## Configuration (`.rig.json`, all optional)
 

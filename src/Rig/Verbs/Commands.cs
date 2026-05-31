@@ -42,26 +42,30 @@ internal sealed class RunCommand : Command
 internal sealed class BuildCommand : Command
 {
     private readonly Option<bool> _watch = new("--watch", "-w") { Description = "Build under dotnet watch" };
+    private readonly Option<string?> _configuration = new("--configuration", "-c") { Description = "Build configuration (e.g. Release)" };
 
     public BuildCommand() : base("build", "Build the solution")
     {
         Aliases.Add("b");
         TreatUnmatchedTokensAsErrors = false;
         Options.Add(_watch);
-        SetAction(pr => BuildVerb.Execute(Cli.Session(pr), Cli.Forwarded(pr), pr.GetValue(_watch)));
+        Options.Add(_configuration);
+        SetAction(pr => BuildVerb.Execute(Cli.Session(pr), Cli.Forwarded(pr), pr.GetValue(_watch), pr.GetValue(_configuration)));
     }
 }
 
 internal sealed class RebuildCommand : Command
 {
-    private readonly Option<bool> _dryRun = new("--dry-run") { Description = "List the bin/obj dirs that would be removed, without deleting" };
+    private readonly Option<string?> _configuration = new("--configuration", "-c") { Description = "Build configuration (e.g. Release)" };
 
     public RebuildCommand() : base("rebuild", "Delete in-tree bin/obj, then build")
     {
         Aliases.Add("rb");
         TreatUnmatchedTokensAsErrors = false;
-        Options.Add(_dryRun);
-        SetAction(pr => RebuildVerb.Execute(Cli.Session(pr), Cli.Forwarded(pr), pr.GetValue(_dryRun)));
+        Options.Add(_configuration);
+        // --dry-run is the global flag now: it lists the bin/obj dirs without deleting.
+        SetAction(pr => RebuildVerb.Execute(
+            Cli.Session(pr), Cli.Forwarded(pr), pr.GetValue(Cli.DryRun), pr.GetValue(_configuration)));
     }
 }
 
@@ -74,6 +78,7 @@ internal sealed class TestCommand : Command
     private readonly Option<bool> _watch = new("--watch", "-w") { Description = "Run under dotnet watch (re-run on change)" };
     private readonly Option<string?> _framework =
         new("--framework", "-f") { Description = "Target framework for a multi-TFM project (e.g. -f net10.0)" };
+    private readonly Option<string?> _configuration = new("--configuration", "-c") { Description = "Build configuration (e.g. Release)" };
 
     public TestCommand() : base("test", "Run tests")
     {
@@ -85,9 +90,10 @@ internal sealed class TestCommand : Command
         Options.Add(_filter);
         Options.Add(_watch);
         Options.Add(_framework);
+        Options.Add(_configuration);
         SetAction(pr => TestVerb.Execute(
             Cli.Session(pr), pr.GetValue(_name), pr.GetValue(_log), pr.GetValue(_filter),
-            Cli.Forwarded(pr), pr.GetValue(_watch), pr.GetValue(_framework)));
+            Cli.Forwarded(pr), pr.GetValue(_watch), pr.GetValue(_framework), pr.GetValue(_configuration)));
     }
 }
 
@@ -130,13 +136,74 @@ internal sealed class PublishCommand : Command
 {
     private readonly Argument<string?> _project = new("project")
         { Arity = ArgumentArity.ZeroOrOne, HelpName = "project", Description = "Project to publish (defaults to defaultProject / the sole runnable)" };
+    private readonly Option<string?> _configuration = new("--configuration", "-c") { Description = "Build configuration (default Release)" };
+    private readonly Option<string?> _rid = new("--rid", "-r") { Description = "Runtime identifier, e.g. osx-arm64 (default: host RID)" };
+    private readonly Option<string?> _output = new("--output", "-o") { Description = "Output dir; {rid} is substituted" };
+    private readonly Option<bool?> _selfContained = new("--self-contained") { Description = "Bundle the runtime (default true)" };
+    private readonly Option<bool?> _singleFile = new("--single-file") { Description = "Publish as a single file (default false)" };
 
     public PublishCommand() : base("publish", "Self-contained dotnet publish")
     {
         Aliases.Add("pub");
         _project.CompletionSources.Add(_ => Completions.RunnableProjects());
         Arguments.Add(_project);
-        SetAction(pr => PublishVerb.Execute(Cli.Session(pr), pr.GetValue(_project)));
+        Options.Add(_configuration);
+        Options.Add(_rid);
+        Options.Add(_output);
+        Options.Add(_selfContained);
+        Options.Add(_singleFile);
+        SetAction(pr => PublishVerb.Execute(Cli.Session(pr), pr.GetValue(_project),
+            pr.GetValue(_configuration), pr.GetValue(_rid), pr.GetValue(_selfContained),
+            pr.GetValue(_singleFile), pr.GetValue(_output)));
+    }
+}
+
+internal sealed class RestoreCommand : Command
+{
+    public RestoreCommand() : base("restore", "Restore NuGet packages for the solution")
+    {
+        Aliases.Add("res");
+        TreatUnmatchedTokensAsErrors = false;
+        SetAction(pr => RestoreVerb.Execute(Cli.Session(pr), Cli.Forwarded(pr)));
+    }
+}
+
+internal sealed class CleanCommand : Command
+{
+    private readonly Option<string?> _configuration = new("--configuration", "-c") { Description = "Configuration to clean (e.g. Release)" };
+
+    public CleanCommand() : base("clean", "dotnet clean the solution (MSBuild-aware; lighter than rebuild)")
+    {
+        TreatUnmatchedTokensAsErrors = false;
+        Options.Add(_configuration);
+        SetAction(pr => CleanVerb.Execute(Cli.Session(pr), Cli.Forwarded(pr), pr.GetValue(_configuration)));
+    }
+}
+
+internal sealed class FormatCommand : Command
+{
+    public FormatCommand() : base("format", "Run dotnet format on the solution")
+    {
+        Aliases.Add("fmt");
+        TreatUnmatchedTokensAsErrors = false;
+        SetAction(pr => FormatVerb.Execute(Cli.Session(pr), Cli.Forwarded(pr)));
+    }
+}
+
+internal sealed class AddCommand : Command
+{
+    private readonly Argument<string?> _package =
+        new("package") { Arity = ArgumentArity.ZeroOrOne, HelpName = "package", Description = "NuGet package id to add" };
+    private readonly Option<string?> _project =
+        new("--project", "-p") { Description = "Project to add to (defaults to defaultProject / the sole project)" };
+
+    public AddCommand() : base("add", "Add a NuGet package to the default/sole project (args after -- forward)")
+    {
+        TreatUnmatchedTokensAsErrors = false;
+        _project.CompletionSources.Add(_ => Completions.RunnableProjects());
+        Arguments.Add(_package);
+        Options.Add(_project);
+        SetAction(pr => AddVerb.Execute(Cli.Session(pr), pr.GetValue(_package), pr.GetValue(_project), Cli.Forwarded(pr)));
     }
 }
 

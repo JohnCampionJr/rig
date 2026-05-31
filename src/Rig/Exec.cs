@@ -15,9 +15,16 @@ namespace Rig;
 /// </summary>
 internal static class Exec
 {
+    /// <summary>When set (via <c>--dry-run</c>/<c>-n</c>), <see cref="Run"/> and
+    /// <see cref="RunShell"/> echo their command (the caller does that) but skip
+    /// the actual spawn, returning success. Read-only <see cref="Capture"/> still
+    /// runs — it never mutates anything.</summary>
+    public static bool DryRun { get; set; }
+
     public static int Run(string file, IEnumerable<string> args, string cwd,
         IReadOnlyDictionary<string, string>? env = null, bool suppressMissing = false)
     {
+        if (DryRun) return 0;
         var psi = new ProcessStartInfo { FileName = file, WorkingDirectory = cwd, UseShellExecute = false };
         foreach (var a in args) psi.ArgumentList.Add(a);
         ApplyEnv(psi, env);
@@ -26,11 +33,34 @@ internal static class Exec
 
     public static int RunShell(string command, string cwd, IReadOnlyDictionary<string, string>? env = null)
     {
+        if (DryRun) return 0;
         var (file, args) = ShellInvocation(command);
         var psi = new ProcessStartInfo { FileName = file, WorkingDirectory = cwd, UseShellExecute = false };
         foreach (var a in args) psi.ArgumentList.Add(a);
         ApplyEnv(psi, env);
         return Start(psi, file, suppressMissing: false);
+    }
+
+    /// <summary>Run a process and capture stdout (read-only — ignores
+    /// <see cref="DryRun"/>). Returns (exit code, stdout); (-1, "") if it can't
+    /// start. Used for non-destructive queries like listing kill targets.</summary>
+    public static (int Code, string Output) Capture(string file, IEnumerable<string> args, string cwd)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = file, WorkingDirectory = cwd, UseShellExecute = false,
+            RedirectStandardOutput = true, RedirectStandardError = true,
+        };
+        foreach (var a in args) psi.ArgumentList.Add(a);
+        try
+        {
+            using var p = Process.Start(psi);
+            if (p is null) return (-1, string.Empty);
+            var output = p.StandardOutput.ReadToEnd();
+            p.WaitForExit();
+            return (p.ExitCode, output);
+        }
+        catch (System.ComponentModel.Win32Exception) { return (-1, string.Empty); }
     }
 
     /// <summary>The platform shell invocation for a command string.</summary>

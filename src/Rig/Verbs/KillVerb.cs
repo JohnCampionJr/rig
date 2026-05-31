@@ -41,6 +41,12 @@ internal static class KillVerb
             return 0;
         }
 
+        if (Exec.DryRun)
+        {
+            foreach (var pattern in patterns) ListMatches(session, pattern);
+            return 0;
+        }
+
         var worst = 0;
         foreach (var pattern in patterns)
         {
@@ -66,5 +72,27 @@ internal static class KillVerb
             else Ui.Info($"no process matched '{pattern}'");
         }
         return worst;
+    }
+
+    // Dry-run: show what *would* be killed, without killing anything.
+    private static void ListMatches(RigSession session, string pattern)
+    {
+        var (file, args) = OperatingSystem.IsWindows()
+            ? ("tasklist", new[] { "/FI", $"IMAGENAME eq {(pattern.EndsWith(".exe", OIC) ? pattern : pattern + ".exe")}", "/NH" })
+            : ("pgrep", ["-fl", pattern]);
+
+        var (code, output) = Exec.Capture(file, args, session.Root);
+        var lines = output.Split('\n')
+            .Select(l => l.Trim())
+            .Where(l => l.Length > 0 && !l.StartsWith("INFO:", OIC)) // tasklist "no tasks" notice
+            .ToList();
+
+        if (code != 0 || lines.Count == 0)
+        {
+            Ui.Info($"no process matches '{pattern}'");
+            return;
+        }
+        Ui.Warn($"would kill {lines.Count} process(es) matching '{pattern}':");
+        foreach (var line in lines) Ui.Info($"  {line}");
     }
 }

@@ -32,7 +32,7 @@ internal static class TestVerb
         return projects.FirstOrDefault(p => p.IsTest)?.FullPath;
     }
 
-    public static int Execute(RigSession session, string? nameOrFilter, bool log, string? explicitFilter, string[] forwarded, bool watch = false, string? framework = null)
+    public static int Execute(RigSession session, string? nameOrFilter, bool log, string? explicitFilter, string[] forwarded, bool watch = false, string? framework = null, string? configuration = null)
     {
         ProjectDiscovery.WarnMultipleSolutions(session.Root, session.Config.Solution);
         var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
@@ -44,7 +44,7 @@ internal static class TestVerb
         }
 
         var filter = explicitFilter ?? FilterForName(nameOrFilter, testProject);
-        var args = BuildTestArgs(testProject, filter, framework, forwarded, watch);
+        var args = BuildTestArgs(testProject, filter, framework, forwarded, watch, configuration);
 
         IReadOnlyDictionary<string, string>? commandEnv = null;
         if (log)
@@ -62,9 +62,10 @@ internal static class TestVerb
     /// <summary>The `dotnet [watch] test …` argument list (pure, so it's testable).
     /// Filter resolution stays in <see cref="Execute"/> (it can prompt); the caller
     /// passes the already-resolved <paramref name="filter"/>.</summary>
-    public static List<string> BuildTestArgs(string testProject, string? filter, string? framework, string[] forwarded, bool watch)
+    public static List<string> BuildTestArgs(string testProject, string? filter, string? framework, string[] forwarded, bool watch, string? configuration = null)
     {
         var args = new List<string> { "test", "--project", testProject };
+        if (!string.IsNullOrEmpty(configuration)) { args.Add("-c"); args.Add(configuration); }
         if (!string.IsNullOrEmpty(framework)) { args.Add("--framework"); args.Add(framework); }
         if (filter is not null) { args.Add("--filter"); args.Add(filter); }
         args.AddRange(forwarded);

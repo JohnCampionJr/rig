@@ -90,7 +90,8 @@
         "rid": { "type": "string" },
         "selfContained": { "type": "boolean" },
         "singleFile": { "type": "boolean" },
-        "output": { "type": "string", "description": "Output dir; {rid} is substituted." }
+        "output": { "type": "string", "description": "Output dir; {rid} is substituted." },
+        "configuration": { "type": "string", "description": "Build configuration (default Release); the --configuration flag overrides." }
       }
     },
     "env": {

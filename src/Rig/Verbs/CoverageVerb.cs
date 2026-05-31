@@ -118,6 +118,7 @@ internal static class CoverageVerb
         var args = BuildCollectArgs(mode, testProject, resultsDir, settings, filter);
 
         Ui.Command("dotnet", args);
+        if (Exec.DryRun) return 0; // nothing to report on; stop after showing the command
         var rc = Exec.Run("dotnet", args, session.Root, session.BuildEnv());
         if (rc != 0) return rc;
 

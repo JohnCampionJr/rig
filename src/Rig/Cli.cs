@@ -19,6 +19,12 @@ internal static class Cli
         Recursive = true,
     };
 
+    public static readonly Option<bool> DryRun = new("--dry-run", "-n")
+    {
+        Description = "Print what would run (or change) without doing it",
+        Recursive = true,
+    };
+
     /// <summary>Tokens after the first <c>--</c>, split off before parsing (see
     /// Program.cs) and forwarded verbatim — kept off the parser so they can't bind
     /// to a verb's optional positional argument.</summary>
@@ -28,8 +34,9 @@ internal static class Cli
     {
         var session = RigSession.Load(Directory.GetCurrentDirectory(), useDotEnv: !parse.GetValue(NoEnv));
         // Set once, here: every verb's action funnels through Session before it
-        // echoes a command. The flag wins; the config pref is the default.
+        // echoes/spawns. The flag wins; the config pref is the default.
         Ui.Quiet = parse.GetValue(Quiet) || session.Config.Quiet == true;
+        Exec.DryRun = parse.GetValue(DryRun);
         return session;
     }
 

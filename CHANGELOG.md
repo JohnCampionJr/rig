@@ -6,6 +6,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- New everyday verbs: `restore` (`res`), `clean`, `format` (`fmt`) — `dotnet
+  restore`/`clean`/`format` on the discovered solution.
+- `rig add <package>` — `dotnet add package` that auto-resolves the target project
+  (default → sole → prompt), so you skip naming it; `--project` to override, args
+  after `--` forward (e.g. `--version`).
+- `--configuration`/`-c` is now a real option on `build`, `rebuild`, and `test`
+  (it was `run`-only); `publish` gains `-c`/`--rid`/`--output`/`--self-contained`/
+  `--single-file` CLI overrides plus a `publish.configuration` config default
+  (CLI > config > Release).
+- Global `--dry-run`/`-n` — prints what each verb would run (or, for `rebuild`,
+  the bin/obj dirs it would delete; for `kill`, the processes that would die)
+  without doing it.
+
 ### Fixed
 - `ConfigWriter` no longer overwrites an existing, non-empty `.rig.json` when an
   edit can't be spliced in place (e.g. a non-object parent) — it refuses and

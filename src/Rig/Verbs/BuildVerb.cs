@@ -4,13 +4,14 @@ namespace Rig;
 /// (or the cwd when there's no solution). Extra args are forwarded.</summary>
 internal static class BuildVerb
 {
-    public static int Execute(RigSession session, string[] forwarded, bool watch = false)
+    public static int Execute(RigSession session, string[] forwarded, bool watch = false, string? configuration = null)
     {
         ProjectDiscovery.WarnMultipleSolutions(session.Root, session.Config.Solution);
         var solution = ProjectDiscovery.FindSolution(session.Root, session.Config.Solution);
 
         var args = new List<string> { "build" };
         if (solution is not null) args.Add(solution);
+        if (!string.IsNullOrEmpty(configuration)) { args.Add("-c"); args.Add(configuration); }
         args.AddRange(forwarded);
         if (watch) args.Insert(0, "watch"); // dotnet watch build …
 

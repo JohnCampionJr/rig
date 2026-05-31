@@ -152,13 +152,41 @@ public sealed class VerbLogicTests
     }
 
     [TestMethod]
-    public void Publish_args_reflect_self_contained_and_single_file()
+    public void Publish_args_reflect_configuration_self_contained_and_single_file()
     {
-        var args = PublishVerb.BuildArgs("/r/App/App.csproj",
-            new PublishConfig { SelfContained = false, SingleFile = true }, "win-x64", "/r/dist/win-x64");
+        var args = PublishVerb.BuildArgs("/r/App/App.csproj", "Debug", "win-x64",
+            selfContained: false, singleFile: true, "/r/dist/win-x64");
 
-        args.Should().ContainInOrder("publish", "/r/App/App.csproj", "-c", "Release", "-r", "win-x64");
+        args.Should().ContainInOrder("publish", "/r/App/App.csproj", "-c", "Debug", "-r", "win-x64");
         args.Should().ContainInConsecutiveOrder("--self-contained", "false");
         args.Should().Contain("-p:PublishSingleFile=true");
+    }
+
+    // ---- AddVerb.ResolveTarget ----
+
+    [TestMethod]
+    public void Add_targets_default_then_sole_then_ambiguous()
+    {
+        // default project wins (and add spans libs too, not just runnables)
+        AddVerb.ResolveTarget([Exe("App"), Lib("Core")], query: null, defaultProject: "Core")
+            .Selected!.Name.Should().Be("Core");
+
+        // single project → chosen with no prompt
+        AddVerb.ResolveTarget([Lib("OnlyLib")], null, null).Selected!.Name.Should().Be("OnlyLib");
+
+        // several, no default → ambiguous (caller prompts / errors)
+        var ambiguous = AddVerb.ResolveTarget([Exe("App"), Lib("Core")], null, null);
+        ambiguous.Selected.Should().BeNull();
+        ambiguous.Ambiguous.Should().HaveCount(2);
+
+        // explicit query that doesn't match → error
+        AddVerb.ResolveTarget([Exe("App")], "nope", null).Error.Should().NotBeNull();
+    }
+
+    [TestMethod]
+    public void Test_and_build_args_carry_configuration()
+    {
+        TestVerb.BuildTestArgs("/r/T/T.csproj", filter: null, framework: null, forwarded: [], watch: false, configuration: "Release")
+            .Should().ContainInConsecutiveOrder("-c", "Release");
     }
 }

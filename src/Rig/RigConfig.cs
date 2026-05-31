@@ -131,6 +131,7 @@ internal sealed class RigConfig
             SelfContained = overlay.SelfContained ?? baseCfg.SelfContained,
             SingleFile = overlay.SingleFile ?? baseCfg.SingleFile,
             Output = Coalesce(overlay.Output, baseCfg.Output),
+            Configuration = Coalesce(overlay.Configuration, baseCfg.Configuration),
         };
     }
 
@@ -222,6 +223,7 @@ internal sealed class PublishConfig
     public bool? SelfContained { get; set; }
     public bool? SingleFile { get; set; }
     public string? Output { get; set; }
+    public string? Configuration { get; set; } // build configuration (default Release)
 }
 
 /// <summary>A shell command (single string) or an explicit argv array
