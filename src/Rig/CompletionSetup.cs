@@ -62,7 +62,7 @@ internal static class CompletionSetup
           local cl="${words[*]}"
           [[ $CURRENT -gt ${#words[@]} ]] && cl+=" "   # completing a fresh trailing word
           local -a suggestions
-          suggestions=(${(f)"$(rig "[suggest:${#cl}]" "$cl" 2>/dev/null)"})
+          suggestions=(${(f)"$(rig "[suggest:${#cl}]" "$cl" 2>/dev/null | grep -vE '^(-\?|-h|/\?|/h)$')"})
           compadd -a suggestions
         }
         compdef _rig rig
@@ -74,7 +74,7 @@ internal static class CompletionSetup
         # It calls rig's built-in [suggest] directive — no dotnet-suggest.
         _rig() {
           local IFS=$'\n'
-          COMPREPLY=( $(compgen -W "$(rig "[suggest:${COMP_POINT}]" "${COMP_LINE}" 2>/dev/null)" -- "${COMP_WORDS[COMP_CWORD]}") )
+          COMPREPLY=( $(compgen -W "$(rig "[suggest:${COMP_POINT}]" "${COMP_LINE}" 2>/dev/null | grep -vE '^(-\?|-h|/\?|/h)$')" -- "${COMP_WORDS[COMP_CWORD]}") )
         }
         complete -F _rig rig
         """;
@@ -85,9 +85,11 @@ internal static class CompletionSetup
         # It calls rig's built-in [suggest] directive — no dotnet-suggest.
         Register-ArgumentCompleter -Native -CommandName rig -ScriptBlock {
           param($wordToComplete, $commandAst, $cursorPosition)
-          rig "[suggest:$cursorPosition]" "$commandAst" 2>$null | ForEach-Object {
-            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-          }
+          rig "[suggest:$cursorPosition]" "$commandAst" 2>$null |
+            Where-Object { $_ -notmatch '^(-\?|-h|/\?|/h)$' } |
+            ForEach-Object {
+              [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+            }
         }
         """;
 }
