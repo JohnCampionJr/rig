@@ -37,10 +37,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Silicon (hardened-runtime signature → CoreCLR `0x80070008`) and the broker
   route wasn't OS-agnostic.
 
-### Fixed
-- Moved `rig.schema.json` to the repository root so the `$schema` URL referenced
-  by `.rig.json` resolves.
-
 ## [0.1.0]
 
 - Initial release — a convention-first .NET dev launcher: `run`, `build`,
@@ -48,3 +44,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and per-repo custom commands; zero-config discovery with an optional
   `.rig.json`; `.env` support; curated verb aliases and prefix matching; an
   interactive menu; and in-process coverage HTML via bundled ReportGenerator.
+
+[Unreleased]: https://github.com/JohnCampionJr/rig/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/JohnCampionJr/rig/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/JohnCampionJr/rig/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/JohnCampionJr/rig/releases/tag/v0.1.0
