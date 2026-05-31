@@ -10,6 +10,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `rig outdated` (`od`) — `dotnet list package --outdated` on the discovered
   solution, with `--vulnerable` / `--deprecated` lenses and `--transitive` /
   `--prerelease`. Restores first when a project hasn't been, so it works in one step.
+- Interactive menu: picking `run` or `publish` now opens a project sub-menu (the
+  configured default is marked) instead of silently firing the default — so other
+  projects are discoverable. `publish` no longer errors on ambiguity from the menu.
 
 ## [1.0.0] - 2026-05-31
 

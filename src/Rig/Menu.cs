@@ -21,9 +21,10 @@ internal static class Menu
         AnsiConsole.Write(new FigletText("rig").Color(Color.Aqua));
 
         var caps = ProbeCapabilities();
+        var (runnable, defaultProject) = LoadRunnable();
         var verbs = root.Subcommands
             .Select(c => c.Name)
-            .Where(n => n is not "completion" and not "init") // setup/shell verbs aren't everyday menu items
+            .Where(n => n is not "completion" and not "init" and not "add") // shell/arg-required verbs aren't menu items
             .Append("watch") // synthetic: opens a sub-menu of watchable verbs
             .Append("quit")
             .ToList();
@@ -53,8 +54,56 @@ internal static class Menu
                 Ui.Warn($"{pick} is unavailable: {reason}.");
                 continue;
             }
+
+            // run/publish target a project — surface the choices (default marked)
+            // instead of silently firing the default.
+            if (pick is "run" or "publish")
+            {
+                var project = ProjectSubmenu($"{(pick == "run" ? "Run" : "Publish")} which project?", runnable, defaultProject);
+                if (project is null) continue; // back / none
+                return root.Parse([pick, project]).Invoke();
+            }
+
             return root.Parse(ArgsFor(pick)).Invoke();
         }
+    }
+
+    // Sub-menu of runnable projects (shared by run/publish). The configured default
+    // is marked; a single project skips the menu. Returns the project, or null
+    // (go back / none available).
+    private static string? ProjectSubmenu(string title, IReadOnlyList<string> projects, string? defaultProject)
+    {
+        if (projects.Count == 0) { Ui.Warn("No runnable projects found."); return null; }
+        if (projects.Count == 1) return projects[0];
+
+        const string back = "← back";
+        bool IsDefault(string p) => defaultProject is not null &&
+            (string.Equals(p, defaultProject, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(ShortName(p), defaultProject, StringComparison.OrdinalIgnoreCase));
+
+        var pick = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title(title)
+                .PageSize(20)
+                .UseConverter(p => p == back ? "[grey]← back[/]" : IsDefault(p) ? $"{p} [grey](default)[/]" : p)
+                .AddChoices([.. projects, back]));
+
+        return pick == back ? null : pick;
+    }
+
+    private static string ShortName(string name) =>
+        name.Contains('.') ? name[(name.LastIndexOf('.') + 1)..] : name;
+
+    private static (List<string> Runnable, string? Default) LoadRunnable()
+    {
+        try
+        {
+            var s = RigSession.Load(Directory.GetCurrentDirectory());
+            var runnable = ProjectDiscovery.Discover(s.Root, s.Config.Solution, s.Config.Exclude)
+                .Where(p => p.IsRunnable).Select(p => p.Name).ToList();
+            return (runnable, s.Config.DefaultProject);
+        }
+        catch { return ([], null); }
     }
 
     // Sub-menu for `dotnet watch`: the verbs that make sense to watch. Unavailable

@@ -46,7 +46,8 @@ be inferred.
 | `setup` | — | Interactive walkthrough — set local/global prefs without hand-editing |
 | `completion <shell>` | `comp` | Print self-contained shell-completion setup (zsh/bash/pwsh) |
 
-Bare `rig` opens an interactive menu. Any **unambiguous prefix** of a verb also
+Bare `rig` opens an interactive menu (picking `run`/`publish` surfaces a project
+picker, default marked). Any **unambiguous prefix** of a verb also
 resolves (`rig cove`, `rig reb`). **Watch** run/test/build either way: the option
 (`rig test -w`) or the leading modifier (`rig watch run`, `rig w r`). Global flags:
 `--dry-run`/`-n` (print what would run/change, don't do it) and `--quiet`/`-q`.
