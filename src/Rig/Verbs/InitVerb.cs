@@ -38,7 +38,11 @@ internal static class InitVerb
           // "commands": { "deploy": "./deploy.sh" },
 
           // Override a verb's short alias (built-ins have sensible defaults):
-          // "aliases": { "coverage": "cov" }
+          // "aliases": { "coverage": "cov" },
+
+          // ReportGenerator Pro license (optional). Since this file is committed,
+          // prefer the REPORTGENERATOR_LICENSE env var / .env for a real key:
+          // "coverage": { "license": "" }
         }
 
         """;
