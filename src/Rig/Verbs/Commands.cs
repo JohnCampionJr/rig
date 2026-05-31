@@ -118,6 +118,27 @@ internal sealed class CoverageCommand : Command
     }
 }
 
+internal sealed class OutdatedCommand : Command
+{
+    private readonly Option<bool> _vulnerable = new("--vulnerable") { Description = "Show packages with known vulnerabilities instead" };
+    private readonly Option<bool> _deprecated = new("--deprecated") { Description = "Show deprecated packages instead" };
+    private readonly Option<bool> _transitive = new("--transitive") { Description = "Include transitive (indirect) dependencies" };
+    private readonly Option<bool> _prerelease = new("--prerelease") { Description = "Consider prerelease versions as the latest" };
+
+    public OutdatedCommand() : base("outdated", "List packages with newer versions (or --vulnerable / --deprecated)")
+    {
+        Aliases.Add("od");
+        TreatUnmatchedTokensAsErrors = false;
+        Options.Add(_vulnerable);
+        Options.Add(_deprecated);
+        Options.Add(_transitive);
+        Options.Add(_prerelease);
+        SetAction(pr => OutdatedVerb.Execute(Cli.Session(pr),
+            pr.GetValue(_vulnerable), pr.GetValue(_deprecated), pr.GetValue(_transitive),
+            pr.GetValue(_prerelease), Cli.Forwarded(pr)));
+    }
+}
+
 internal sealed class KillCommand : Command
 {
     public KillCommand() : base("kill", "Terminate matching app/test processes")

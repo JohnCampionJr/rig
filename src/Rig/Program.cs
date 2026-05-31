@@ -54,6 +54,7 @@ static RootCommand BuildRoot()
         new TestCommand(),
         new CoverageCommand(),
         new AddCommand(),
+        new OutdatedCommand(),
         new KillCommand(),
         new PublishCommand(),
         new DefaultCommand(),

@@ -6,6 +6,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- `rig outdated` (`od`) — `dotnet list package --outdated` on the discovered
+  solution, with `--vulnerable` / `--deprecated` lenses and `--transitive` /
+  `--prerelease`. Restores first when a project hasn't been, so it works in one step.
+
 ## [1.0.0] - 2026-05-31
 
 First stable release. Rolls up everything since 0.1.2 (the unreleased 0.2.0 work).

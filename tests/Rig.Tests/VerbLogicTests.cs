@@ -183,6 +183,30 @@ public sealed class VerbLogicTests
         AddVerb.ResolveTarget([Exe("App")], "nope", null).Error.Should().NotBeNull();
     }
 
+    // ---- OutdatedVerb.BuildArgs ----
+
+    [TestMethod]
+    public void Outdated_args_default_to_outdated_lens_with_solution()
+    {
+        var args = OutdatedVerb.BuildArgs("/r/App.slnx", vulnerable: false, deprecated: false,
+            transitive: false, prerelease: false, forwarded: []);
+        args.Should().ContainInConsecutiveOrder("list", "/r/App.slnx", "package", "--outdated");
+    }
+
+    [TestMethod]
+    public void Outdated_lenses_are_mutually_exclusive_and_prerelease_is_outdated_only()
+    {
+        // vulnerable wins over the default outdated; prerelease is dropped (not valid there)
+        var vuln = OutdatedVerb.BuildArgs(null, vulnerable: true, deprecated: false,
+            transitive: true, prerelease: true, forwarded: []);
+        vuln.Should().Contain("--vulnerable").And.Contain("--include-transitive");
+        vuln.Should().NotContain("--outdated").And.NotContain("--include-prerelease");
+
+        // prerelease applies on the default outdated lens
+        OutdatedVerb.BuildArgs(null, false, false, false, prerelease: true, forwarded: [])
+            .Should().Contain("--include-prerelease");
+    }
+
     [TestMethod]
     public void Test_and_build_args_carry_configuration()
     {
