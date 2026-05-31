@@ -23,7 +23,9 @@ internal sealed class TempDir : IDisposable
 
     public string Write(string relative, string content)
     {
-        var full = System.IO.Path.Combine(Path, relative);
+        // Normalize '/' in test literals to the OS separator so the returned path
+        // matches what the production code produces (avoids mixed separators on Windows).
+        var full = System.IO.Path.Combine(Path, relative.Replace('/', System.IO.Path.DirectorySeparatorChar));
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(full)!);
         File.WriteAllText(full, content);
         return full;
