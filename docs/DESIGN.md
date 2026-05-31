@@ -18,10 +18,16 @@ extraction history lives in that original repo.)
 
 Two libraries at **different layers** — deliberately *not* Spectre.Console.Cli.
 
-- **System.CommandLine 2.0 (GA)** — parsing, dispatch, and **standardized shell
-  completion via `dotnet-suggest`** (dynamic values through `CompletionSources`).
-  The redesign discontinued the `Hosting`/`NamingConventionBinder`/`Rendering`
-  companion packages, which *validates* bringing our own renderer.
+- **System.CommandLine 2.0 (GA)** — parsing, dispatch, and the `[suggest]`
+  completion directive (dynamic values through `CompletionSources`). The redesign
+  discontinued the `Hosting`/`NamingConventionBinder`/`Rendering` companion
+  packages, which *validates* bringing our own renderer.
+  > **Completion is self-contained.** `rig completion <zsh|bash|pwsh>` emits a
+  > script that calls rig's `[suggest]` directive **directly** — no `dotnet-suggest`
+  > broker. That's deliberate: dotnet-suggest's apphost ships a hardened-runtime
+  > code signature that fails CoreCLR init on Apple Silicon (`0x80070008`), and its
+  > shim has a zsh parse error — fragile and not OS-agnostic. The directive is
+  > identical on every OS, so the per-shell scripts cover macOS/Linux/Windows.
 - **Spectre.Console** (the rendering library, not `.Cli`) — menu, prompts, tables,
   the Figlet banner.
 
@@ -81,7 +87,7 @@ only *reads* metadata — so an older host can inspect a newer (e.g. net10) test
    enumerates test classes from a net10 assembly; host runtime dir + the test's
    bin dir is enough, name-level resolution suffices for metadata).
 2. **Coverage → Cobertura → in-process report** — confirmed end-to-end.
-3. **`dotnet-suggest` completes a *globally-installed* `rig`** — *pending*:
-   `CompletionSources` are wired and enumerate live, but end-to-end shell
-   completion through `dotnet-suggest` against an installed apphost isn't exercised
-   yet. Prove before relying on it.
+3. **Shell completion of a globally-installed `rig`** — confirmed via the direct
+   `[suggest]` route (no `dotnet-suggest`): the directive returns static verbs *and*
+   dynamic project/test names, and `eval "$(rig completion zsh)"` defines the
+   completion function with no parse error.

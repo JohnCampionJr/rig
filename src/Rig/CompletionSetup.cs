@@ -3,10 +3,11 @@ using Spectre.Console;
 namespace Rig;
 
 /// <summary>
-/// Prints the one-time shell setup for completion. `rig` participates in the
-/// standard <c>dotnet-suggest</c> mechanism (it discovers System.CommandLine
-/// global tools automatically), so the per-shell snippet wires the shell to
-/// <c>dotnet-suggest</c> rather than to `rig` directly.
+/// Prints a self-contained shell-completion script for rig. The script calls
+/// rig's own <c>[suggest:&lt;pos&gt;]</c> directive directly — no
+/// <c>dotnet-suggest</c> broker, no extra install, and identical behaviour on
+/// macOS / Linux / Windows (the directive is System.CommandLine, not platform
+/// code). Use it via <c>eval "$(rig completion zsh)"</c> (or the pwsh form).
 /// </summary>
 internal static class CompletionSetup
 {
@@ -20,12 +21,9 @@ internal static class CompletionSetup
             return 1;
         }
 
-        AnsiConsole.WriteLine("# 1. Install the completion broker once:");
-        AnsiConsole.WriteLine("#    dotnet tool install --global dotnet-suggest");
-        AnsiConsole.WriteLine("# 2. Add the snippet below to your shell profile, then restart your shell.");
-        AnsiConsole.WriteLine();
-
-        AnsiConsole.WriteLine(shell.ToLowerInvariant() switch
+        // Raw stdout — NOT AnsiConsole, which wraps to terminal width and would
+        // corrupt the script when captured via `eval "$(rig completion zsh)"`.
+        Console.WriteLine(shell.ToLowerInvariant() switch
         {
             "zsh" => Zsh,
             "bash" => Bash,
@@ -34,31 +32,37 @@ internal static class CompletionSetup
         return 0;
     }
 
-    private const string Bash = """
-        _dotnet_suggest() {
-          local completions=$(dotnet-suggest get --executable "${COMP_WORDS[0]}" --position ${COMP_POINT} -- "${COMP_LINE}")
-          COMPREPLY=( $(compgen -W "$completions" -- "${COMP_WORDS[COMP_CWORD]}") )
-        }
-        complete -F _dotnet_suggest rig
-        export DOTNET_SUGGEST_SCRIPT_VERSION="1.0.0"
-        """;
-
+    // zsh: add to ~/.zshrc →  eval "$(rig completion zsh)"
     private const string Zsh = """
-        _dotnet_suggest() {
-          local completions=$(dotnet-suggest get --executable "${words[1]}" --position $CURSOR -- "${BUFFER}")
-          reply=( ${(ps:\n:)completions} )
+        # rig shell completion — calls rig's built-in [suggest] directive (no dotnet-suggest).
+        _rig() {
+          local cl="${words[*]}"
+          [[ $CURRENT -gt ${#words[@]} ]] && cl+=" "   # completing a fresh trailing word
+          local -a suggestions
+          suggestions=(${(f)"$(rig "[suggest:${#cl}]" "$cl" 2>/dev/null)"})
+          compadd -a suggestions
         }
-        compctl -K _dotnet_suggest rig
-        export DOTNET_SUGGEST_SCRIPT_VERSION="1.0.0"
+        compdef _rig rig
         """;
 
+    // bash: add to ~/.bashrc →  eval "$(rig completion bash)"
+    private const string Bash = """
+        # rig shell completion — calls rig's built-in [suggest] directive (no dotnet-suggest).
+        _rig() {
+          local IFS=$'\n'
+          COMPREPLY=( $(compgen -W "$(rig "[suggest:${COMP_POINT}]" "${COMP_LINE}" 2>/dev/null)" -- "${COMP_WORDS[COMP_CWORD]}") )
+        }
+        complete -F _rig rig
+        """;
+
+    // pwsh: add to $PROFILE →  Invoke-Expression (& rig completion pwsh | Out-String)
     private const string Pwsh = """
+        # rig shell completion — calls rig's built-in [suggest] directive (no dotnet-suggest).
         Register-ArgumentCompleter -Native -CommandName rig -ScriptBlock {
           param($wordToComplete, $commandAst, $cursorPosition)
-          dotnet-suggest get --executable "rig" --position $cursorPosition -- "$commandAst" | ForEach-Object {
+          rig "[suggest:$cursorPosition]" "$commandAst" 2>$null | ForEach-Object {
             [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
           }
         }
-        $env:DOTNET_SUGGEST_SCRIPT_VERSION = "1.0.0"
         """;
 }

@@ -34,7 +34,7 @@ be inferred.
 | `default [project]` | `def` | Show or set the default run project (no run) |
 | `info` | `i` | Show what rig discovered/resolved for this repo |
 | `init` | — | Scaffold a commented `.rig.json` |
-| `completion <shell>` | `comp` | Print shell-completion setup (dotnet-suggest) |
+| `completion <shell>` | `comp` | Print self-contained shell-completion setup (zsh/bash/pwsh) |
 
 Bare `rig` opens an interactive menu. Any **unambiguous prefix** of a verb also
 resolves (`rig cove`, `rig reb`). **Watch** run/test/build either way: the option
@@ -70,10 +70,22 @@ ReportGenerator **Pro** features unlock via the `REPORTGENERATOR_LICENSE` env va
 
 ## Completion
 
-`rig` participates in `dotnet-suggest`. Install it once
-(`dotnet tool install --global dotnet-suggest`) and add the snippet from
-`rig completion <zsh|bash|pwsh>` to your shell profile — then Tab completes verbs
-*and* discovered project/test names.
+Self-contained — **no `dotnet-suggest` required**. Add one line for your shell;
+it calls rig's own `[suggest]` directive, so it behaves identically on macOS,
+Linux, and Windows:
+
+```sh
+# zsh — ~/.zshrc
+eval "$(rig completion zsh)"
+# bash — ~/.bashrc
+eval "$(rig completion bash)"
+```
+```powershell
+# pwsh — $PROFILE
+Invoke-Expression (& rig completion pwsh | Out-String)
+```
+
+Tab then completes verbs, aliases, and discovered project/test names.
 
 ## Building from source
 
