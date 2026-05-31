@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-05-31
+
+First stable release. Rolls up everything since 0.1.2 (the unreleased 0.2.0 work).
+
 ### Added
 - New everyday verbs: `restore` (`res`), `clean`, `format` (`fmt`) — `dotnet
   restore`/`clean`/`format` on the discovered solution.
@@ -115,7 +119,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `.rig.json`; `.env` support; curated verb aliases and prefix matching; an
   interactive menu; and in-process coverage HTML via bundled ReportGenerator.
 
-[Unreleased]: https://github.com/JohnCampionJr/rig/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/JohnCampionJr/rig/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/JohnCampionJr/rig/compare/v0.1.2...v1.0.0
 [0.1.2]: https://github.com/JohnCampionJr/rig/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/JohnCampionJr/rig/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/JohnCampionJr/rig/releases/tag/v0.1.0
