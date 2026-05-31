@@ -16,6 +16,10 @@ internal sealed class RunCommand : Command
         new("--watch", "-w") { Description = "Run under dotnet watch (hot reload)" };
     private readonly Option<string?> _configuration =
         new("--configuration", "-c") { Description = "Build configuration (e.g. Release)" };
+    private readonly Option<string?> _framework =
+        new("--framework", "-f") { Description = "Target framework for a multi-TFM project (e.g. -f net10.0)" };
+    private readonly Option<string?> _launchProfile =
+        new("--launch-profile") { Description = "launchSettings.json profile to run" };
 
     public RunCommand() : base("run", "Run a runnable project (args after -- are forwarded)")
     {
@@ -26,9 +30,12 @@ internal sealed class RunCommand : Command
         Options.Add(_remember);
         Options.Add(_watch);
         Options.Add(_configuration);
+        Options.Add(_framework);
+        Options.Add(_launchProfile);
         SetAction(pr => RunVerb.Execute(
             Cli.Session(pr), pr.GetValue(_project), Cli.Forwarded(pr),
-            pr.GetValue(_remember), pr.GetValue(_watch), pr.GetValue(_configuration)));
+            pr.GetValue(_remember), pr.GetValue(_watch), pr.GetValue(_configuration),
+            pr.GetValue(_framework), pr.GetValue(_launchProfile)));
     }
 }
 
@@ -65,6 +72,8 @@ internal sealed class TestCommand : Command
     private readonly Option<bool> _log = new("--log") { Description = "Apply the test.envPresets 'log' bundle" };
     private readonly Option<string?> _filter = new("--filter") { Description = "Raw test-platform filter expression" };
     private readonly Option<bool> _watch = new("--watch", "-w") { Description = "Run under dotnet watch (re-run on change)" };
+    private readonly Option<string?> _framework =
+        new("--framework", "-f") { Description = "Target framework for a multi-TFM project (e.g. -f net10.0)" };
 
     public TestCommand() : base("test", "Run tests")
     {
@@ -75,8 +84,10 @@ internal sealed class TestCommand : Command
         Options.Add(_log);
         Options.Add(_filter);
         Options.Add(_watch);
+        Options.Add(_framework);
         SetAction(pr => TestVerb.Execute(
-            Cli.Session(pr), pr.GetValue(_name), pr.GetValue(_log), pr.GetValue(_filter), Cli.Forwarded(pr), pr.GetValue(_watch)));
+            Cli.Session(pr), pr.GetValue(_name), pr.GetValue(_log), pr.GetValue(_filter),
+            Cli.Forwarded(pr), pr.GetValue(_watch), pr.GetValue(_framework)));
     }
 }
 
@@ -164,7 +175,7 @@ internal sealed class CompletionCommand : Command
 {
     private readonly Argument<string?> _shell = new("shell") { Arity = ArgumentArity.ZeroOrOne, Description = "zsh | bash | pwsh" };
 
-    public CompletionCommand() : base("completion", "Print shell completion setup (dotnet-suggest)")
+    public CompletionCommand() : base("completion", "Print shell completion setup (zsh/bash/pwsh)")
     {
         Aliases.Add("comp");
         Arguments.Add(_shell);

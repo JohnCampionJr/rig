@@ -23,6 +23,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (masked: shows `set (Pro)` + source, never the key). Markers appear only when a
   global config is present.
 
+- `rig run` and `rig test` accept `--framework`/`-f` (multi-TFM projects); `rig
+  run` also accepts `--launch-profile` (a `launchSettings.json` profile). Both
+  slot in before the `--` forwarding boundary.
+
 ### Changed
 - Completion no longer suggests the help-option noise aliases (`-?`, `-h`, `/?`,
   `/h`) — `-h`/`--help` still work, they're just hidden from suggestions. Useful

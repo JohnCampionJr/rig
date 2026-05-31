@@ -28,10 +28,10 @@ be inferred.
 
 | Verb | Alias | What |
 |------|-------|------|
-| `run [project]` | `r` | Run a runnable project (`-w` watch, `-c` configuration; args after `--` go to the app) |
+| `run [project]` | `r` | Run a runnable project (`-w` watch, `-c` config, `-f` framework, `--launch-profile`; args after `--` go to the app) |
 | `build` | `b` | Build the solution (`-w` watch) |
 | `rebuild` | `rb` | Delete in-tree bin/obj (scoped to solution projects), then build (`--dry-run`) |
-| `test [name]` | `t` | Run tests; bare name → fuzzy class match; `~ = !~ !=` filter shorthand; `--log`, `-w` |
+| `test [name]` | `t` | Run tests; bare name → fuzzy class match; `~ = !~ !=` filter shorthand; `--log`, `-w`, `-f` framework |
 | `coverage [name]` | `c` | Tests + coverage; in-process HTML report; `--full`, `--open` |
 | `kill` | `k` | Terminate the app/test processes |
 | `publish [project]` | `pub` | Self-contained `dotnet publish` |

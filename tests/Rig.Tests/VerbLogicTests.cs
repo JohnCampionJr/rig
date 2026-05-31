@@ -48,6 +48,51 @@ public sealed class VerbLogicTests
         RunVerb.Resolve([Lib("Core")], null, null).Error.Should().NotBeNull();
     }
 
+    // ---- RunVerb.BuildRunArgs / TestVerb.BuildTestArgs ----
+
+    [TestMethod]
+    public void Run_args_place_framework_and_launch_profile_before_the_forwarding_boundary()
+    {
+        var args = RunVerb.BuildRunArgs("/r/App/App.csproj", configuration: "Release",
+            framework: "net10.0", launchProfile: "https", forwarded: ["--urls", "http://*:0"], watch: false);
+
+        args.Should().ContainInConsecutiveOrder("run", "--project", "/r/App/App.csproj");
+        args.Should().ContainInConsecutiveOrder("--framework", "net10.0");
+        args.Should().ContainInConsecutiveOrder("--launch-profile", "https");
+        // forwarded args live after `--`, and the framework flags come before it
+        args.IndexOf("--framework").Should().BeLessThan(args.IndexOf("--"));
+        args.Skip(args.IndexOf("--") + 1).Should().ContainInOrder("--urls", "http://*:0");
+    }
+
+    [TestMethod]
+    public void Run_args_omit_unset_options_and_prepend_watch()
+    {
+        var args = RunVerb.BuildRunArgs("/r/App/App.csproj", configuration: null,
+            framework: null, launchProfile: null, forwarded: [], watch: true);
+
+        args.Should().Equal("watch", "run", "--project", "/r/App/App.csproj");
+        args.Should().NotContain("--framework").And.NotContain("--launch-profile").And.NotContain("--");
+    }
+
+    [TestMethod]
+    public void Test_args_include_framework_and_filter()
+    {
+        var args = TestVerb.BuildTestArgs("/r/T/T.csproj", filter: "FullyQualifiedName~Foo",
+            framework: "net10.0", forwarded: ["--blame"], watch: false);
+
+        args.Should().ContainInConsecutiveOrder("test", "--project", "/r/T/T.csproj");
+        args.Should().ContainInConsecutiveOrder("--framework", "net10.0");
+        args.Should().ContainInConsecutiveOrder("--filter", "FullyQualifiedName~Foo");
+        args.Should().Contain("--blame");
+    }
+
+    [TestMethod]
+    public void Test_args_omit_framework_and_filter_when_unset()
+    {
+        var args = TestVerb.BuildTestArgs("/r/T/T.csproj", filter: null, framework: null, forwarded: [], watch: false);
+        args.Should().Equal("test", "--project", "/r/T/T.csproj");
+    }
+
     // ---- RebuildVerb.IsSkipped ----
 
     [TestMethod]

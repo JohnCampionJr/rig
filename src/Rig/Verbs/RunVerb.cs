@@ -40,7 +40,8 @@ internal static class RunVerb
     }
 
     public static int Execute(RigSession session, string? query, string[] forwarded,
-        bool remember = false, bool watch = false, string? configuration = null)
+        bool remember = false, bool watch = false, string? configuration = null,
+        string? framework = null, string? launchProfile = null)
     {
         ProjectDiscovery.WarnMultipleSolutions(session.Root, session.Config.Solution);
         var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
@@ -69,16 +70,27 @@ internal static class RunVerb
             Ui.Success($"Set defaultProject = {project.Name} in {Path.GetFileName(path)}");
         }
 
-        var args = new List<string> { "run", "--project", project.FullPath };
+        var args = BuildRunArgs(project.FullPath, configuration, framework, launchProfile, forwarded, watch);
+        Ui.Command("dotnet", args);
+        return Exec.Run("dotnet", args, session.Root, session.BuildEnv());
+    }
+
+    /// <summary>The `dotnet [watch] run …` argument list (pure, so it's testable).
+    /// Framework / launch-profile slot in before the `--` forwarding boundary.</summary>
+    public static List<string> BuildRunArgs(string projectFullPath, string? configuration,
+        string? framework, string? launchProfile, string[] forwarded, bool watch)
+    {
+        var args = new List<string> { "run", "--project", projectFullPath };
         if (!string.IsNullOrEmpty(configuration)) { args.Add("-c"); args.Add(configuration); }
+        if (!string.IsNullOrEmpty(framework)) { args.Add("--framework"); args.Add(framework); }
+        if (!string.IsNullOrEmpty(launchProfile)) { args.Add("--launch-profile"); args.Add(launchProfile); }
         if (forwarded.Length > 0)
         {
             args.Add("--");
             args.AddRange(forwarded);
         }
         if (watch) args.Insert(0, "watch"); // dotnet watch run …
-        Ui.Command("dotnet", args);
-        return Exec.Run("dotnet", args, session.Root, session.BuildEnv());
+        return args;
     }
 
     private static bool NameMatches(ProjectInfo p, string q) =>

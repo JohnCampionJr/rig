@@ -32,7 +32,7 @@ internal static class TestVerb
         return projects.FirstOrDefault(p => p.IsTest)?.FullPath;
     }
 
-    public static int Execute(RigSession session, string? nameOrFilter, bool log, string? explicitFilter, string[] forwarded, bool watch = false)
+    public static int Execute(RigSession session, string? nameOrFilter, bool log, string? explicitFilter, string[] forwarded, bool watch = false, string? framework = null)
     {
         ProjectDiscovery.WarnMultipleSolutions(session.Root, session.Config.Solution);
         var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
@@ -43,11 +43,8 @@ internal static class TestVerb
             return 1;
         }
 
-        var args = new List<string> { "test", "--project", testProject };
-
         var filter = explicitFilter ?? FilterForName(nameOrFilter, testProject);
-        if (filter is not null) { args.Add("--filter"); args.Add(filter); }
-        args.AddRange(forwarded);
+        var args = BuildTestArgs(testProject, filter, framework, forwarded, watch);
 
         IReadOnlyDictionary<string, string>? commandEnv = null;
         if (log)
@@ -58,9 +55,21 @@ internal static class TestVerb
                 Ui.Warn("--log: no test.envPresets.log defined in .rig.json; nothing applied.");
         }
 
-        if (watch) args.Insert(0, "watch"); // dotnet watch test …
         Ui.Command("dotnet", args);
         return Exec.Run("dotnet", args, session.Root, session.BuildEnv(commandEnv));
+    }
+
+    /// <summary>The `dotnet [watch] test …` argument list (pure, so it's testable).
+    /// Filter resolution stays in <see cref="Execute"/> (it can prompt); the caller
+    /// passes the already-resolved <paramref name="filter"/>.</summary>
+    public static List<string> BuildTestArgs(string testProject, string? filter, string? framework, string[] forwarded, bool watch)
+    {
+        var args = new List<string> { "test", "--project", testProject };
+        if (!string.IsNullOrEmpty(framework)) { args.Add("--framework"); args.Add(framework); }
+        if (filter is not null) { args.Add("--filter"); args.Add(filter); }
+        args.AddRange(forwarded);
+        if (watch) args.Insert(0, "watch"); // dotnet watch test …
+        return args;
     }
 
     private static string? FilterForName(string? nameOrFilter, string? testProject)
