@@ -1,5 +1,9 @@
 # rig
 
+[![ci](https://github.com/JohnCampionJr/rig/actions/workflows/ci.yml/badge.svg)](https://github.com/JohnCampionJr/rig/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/v/rig.svg)](https://www.nuget.org/packages/rig)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A convention-first .NET dev launcher, packaged as a dotnet tool. `rig` wraps the
 everyday `dotnet` loop — run, build, test, coverage, kill, publish — with project
 discovery, fuzzy matching, an interactive menu, shell completion, and per-repo

@@ -1,0 +1,57 @@
+name: publish
+
+# Publishes to nuget.org when a version tag is pushed, e.g.:
+#   git tag v0.1.3 && git push origin v0.1.3
+# The package version is taken from the tag (v0.1.3 -> 0.1.3), not the csproj.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  id-token: write   # required for NuGet Trusted Publishing (OIDC)
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Test
+        run: dotnet test Rig.slnx --configuration Release
+
+      - name: Pack (version from tag)
+        run: >
+          dotnet pack src/Rig/Rig.csproj -c Release -o artifacts
+          --include-symbols -p:SymbolPackageFormat=snupkg
+          -p:Version="${GITHUB_REF_NAME#v}"
+
+      # Trusted Publishing: exchanges the GitHub OIDC token for a short-lived
+      # NuGet API key. Configure on nuget.org (Account → Trusted Publishing):
+      #   Repository owner: JohnCampionJr   Repository: rig
+      #   Workflow file:    publish.yml
+      # and set the `NUGET_USER` repo variable to your nuget.org username.
+      - name: NuGet login (trusted publishing)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Push
+        run: >
+          dotnet nuget push "artifacts/*.nupkg"
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      # --- Alternative: API-key secret instead of trusted publishing ---
+      # Drop the `permissions: id-token` + NuGet/login step, add a repo secret
+      # NUGET_API_KEY, and use:
+      #   --api-key "${{ secrets.NUGET_API_KEY }}"

@@ -1,0 +1,26 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          # net10 SDK runs `dotnet test` (honours global.json's MTP runner);
+          # net8 runtime runs the net8.0 tool + test assemblies.
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: Test
+        run: dotnet test Rig.slnx --configuration Release
