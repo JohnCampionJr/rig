@@ -15,9 +15,16 @@ internal static class CompletionSetup
 
     public static int Print(string? shell)
     {
-        if (string.IsNullOrWhiteSpace(shell) || !Shells.Contains(shell, StringComparer.OrdinalIgnoreCase))
+        // No shell → show how to enable completion (this is what users run first).
+        if (string.IsNullOrWhiteSpace(shell))
         {
-            Ui.Error($"Usage: rig completion <{string.Join('|', Shells)}>");
+            Console.WriteLine(Instructions);
+            return 0;
+        }
+
+        if (!Shells.Contains(shell, StringComparer.OrdinalIgnoreCase))
+        {
+            Ui.Error($"Unknown shell '{shell}'. Supported: {string.Join(", ", Shells)}.");
             return 1;
         }
 
@@ -32,9 +39,25 @@ internal static class CompletionSetup
         return 0;
     }
 
-    // zsh: add to ~/.zshrc →  eval "$(rig completion zsh)"
+    private const string Instructions = """
+        Enable rig tab-completion by adding the line for your shell to its startup file,
+        then restarting the shell:
+
+          zsh    ~/.zshrc     eval "$(rig completion zsh)"
+          bash   ~/.bashrc    eval "$(rig completion bash)"
+          pwsh   $PROFILE     Invoke-Expression (& rig completion pwsh | Out-String)
+
+        That one line generates and loads the completer (it calls rig's built-in
+        [suggest] directive — no dotnet-suggest needed). Run `rig completion <shell>`
+        to see the script itself.
+        """;
+
     private const string Zsh = """
-        # rig shell completion — calls rig's built-in [suggest] directive (no dotnet-suggest).
+        # rig zsh completion. Add this ONE line to ~/.zshrc (don't paste this script):
+        #     eval "$(rig completion zsh)"
+        # It calls rig's built-in [suggest] directive — no dotnet-suggest.
+        # Initialize zsh's completion system if it isn't already (no-op on oh-my-zsh etc.).
+        (( $+functions[compdef] )) || { autoload -Uz compinit && compinit -u 2>/dev/null }
         _rig() {
           local cl="${words[*]}"
           [[ $CURRENT -gt ${#words[@]} ]] && cl+=" "   # completing a fresh trailing word
@@ -45,9 +68,10 @@ internal static class CompletionSetup
         compdef _rig rig
         """;
 
-    // bash: add to ~/.bashrc →  eval "$(rig completion bash)"
     private const string Bash = """
-        # rig shell completion — calls rig's built-in [suggest] directive (no dotnet-suggest).
+        # rig bash completion. Add this line to ~/.bashrc (don't paste this script):
+        #     eval "$(rig completion bash)"
+        # It calls rig's built-in [suggest] directive — no dotnet-suggest.
         _rig() {
           local IFS=$'\n'
           COMPREPLY=( $(compgen -W "$(rig "[suggest:${COMP_POINT}]" "${COMP_LINE}" 2>/dev/null)" -- "${COMP_WORDS[COMP_CWORD]}") )
@@ -55,9 +79,10 @@ internal static class CompletionSetup
         complete -F _rig rig
         """;
 
-    // pwsh: add to $PROFILE →  Invoke-Expression (& rig completion pwsh | Out-String)
     private const string Pwsh = """
-        # rig shell completion — calls rig's built-in [suggest] directive (no dotnet-suggest).
+        # rig PowerShell completion. Add this line to $PROFILE (don't paste this script):
+        #     Invoke-Expression (& rig completion pwsh | Out-String)
+        # It calls rig's built-in [suggest] directive — no dotnet-suggest.
         Register-ArgumentCompleter -Native -CommandName rig -ScriptBlock {
           param($wordToComplete, $commandAst, $cursorPosition)
           rig "[suggest:$cursorPosition]" "$commandAst" 2>$null | ForEach-Object {
