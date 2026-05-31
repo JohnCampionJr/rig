@@ -40,6 +40,75 @@ internal sealed class RigConfig
     public static RigConfig Parse(string json) =>
         JsonSerializer.Deserialize<RigConfig>(json, Options) ?? new RigConfig();
 
+    /// <summary>
+    /// Layer <paramref name="overlay"/> (the repo's <c>.rig.json</c>) on top of
+    /// <paramref name="baseCfg"/> (the user-wide <c>~/.rig.json</c>): the overlay
+    /// wins per key, dictionaries union, and empty/whitespace strings count as
+    /// "unset" so a scaffolded blank (e.g. <c>coverage.license: ""</c>) never
+    /// shadows a real global value.
+    /// </summary>
+    public static RigConfig Merge(RigConfig baseCfg, RigConfig overlay) => new()
+    {
+        Solution = Coalesce(overlay.Solution, baseCfg.Solution),
+        DefaultProject = Coalesce(overlay.DefaultProject, baseCfg.DefaultProject),
+        Test = MergeTest(baseCfg.Test, overlay.Test),
+        Coverage = MergeCoverage(baseCfg.Coverage, overlay.Coverage),
+        Kill = overlay.Kill ?? baseCfg.Kill,
+        Rebuild = overlay.Rebuild ?? baseCfg.Rebuild,
+        Publish = MergePublish(baseCfg.Publish, overlay.Publish),
+        Env = MergeDict(baseCfg.Env, overlay.Env),
+        Commands = MergeDict(baseCfg.Commands, overlay.Commands),
+        Aliases = MergeDict(baseCfg.Aliases, overlay.Aliases),
+    };
+
+    private static string? Coalesce(string? overlay, string? baseValue) =>
+        string.IsNullOrWhiteSpace(overlay) ? baseValue : overlay;
+
+    private static Dictionary<string, T>? MergeDict<T>(Dictionary<string, T>? baseDict, Dictionary<string, T>? overlay)
+    {
+        if (baseDict is null) return overlay;
+        if (overlay is null) return baseDict;
+        var merged = new Dictionary<string, T>(baseDict);
+        foreach (var kv in overlay) merged[kv.Key] = kv.Value; // overlay wins per key
+        return merged;
+    }
+
+    private static TestConfig? MergeTest(TestConfig? baseCfg, TestConfig? overlay)
+    {
+        if (baseCfg is null) return overlay;
+        if (overlay is null) return baseCfg;
+        return new TestConfig
+        {
+            Project = Coalesce(overlay.Project, baseCfg.Project),
+            EnvPresets = MergeDict(baseCfg.EnvPresets, overlay.EnvPresets),
+        };
+    }
+
+    private static CoverageConfig? MergeCoverage(CoverageConfig? baseCfg, CoverageConfig? overlay)
+    {
+        if (baseCfg is null) return overlay;
+        if (overlay is null) return baseCfg;
+        return new CoverageConfig
+        {
+            Settings = Coalesce(overlay.Settings, baseCfg.Settings),
+            Collector = Coalesce(overlay.Collector, baseCfg.Collector),
+            License = Coalesce(overlay.License, baseCfg.License),
+        };
+    }
+
+    private static PublishConfig? MergePublish(PublishConfig? baseCfg, PublishConfig? overlay)
+    {
+        if (baseCfg is null) return overlay;
+        if (overlay is null) return baseCfg;
+        return new PublishConfig
+        {
+            Rid = Coalesce(overlay.Rid, baseCfg.Rid),
+            SelfContained = overlay.SelfContained ?? baseCfg.SelfContained,
+            SingleFile = overlay.SingleFile ?? baseCfg.SingleFile,
+            Output = Coalesce(overlay.Output, baseCfg.Output),
+        };
+    }
+
     private static readonly string[] KnownKeys =
         ["$schema", "solution", "defaultProject", "test", "coverage", "kill", "rebuild", "publish", "env", "commands", "aliases"];
 

@@ -64,6 +64,22 @@ targets. What's left is only what can't be inferred:
 `defaultProject` for you (comment-preserving). `.env` / `.env.local` are loaded
 automatically (dotenv precedence).
 
+### User-wide config (`~/.rig.json`)
+
+A `~/.rig.json` (override the path with `$RIG_GLOBAL_CONFIG`) applies to **every**
+repo. The repo's `.rig.json` is layered on top — repo wins per key, dictionaries
+(`env`, `aliases`, `commands`) union. Good for personal aliases and, especially, a
+**ReportGenerator Pro license** you set once and never commit:
+
+```jsonc
+// ~/.rig.json
+{ "coverage": { "license": "your-pro-key" }, "aliases": { "coverage": "cov" } }
+```
+
+A repo's scaffolded blank `coverage.license: ""` falls through to this global key
+(empty strings count as unset), so the license lives in exactly one un-committed
+place. `rig info` shows the global path and merged result.
+
 ## Coverage
 
 Coverage renders in-process via the bundled **ReportGenerator** — no separate

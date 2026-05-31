@@ -14,6 +14,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `rig init` scaffolds a ready-to-fill `coverage.license` field (blank = the free
   engine), since the ReportGenerator Pro key is the one setting that isn't
   auto-discoverable.
+- User-wide config: `~/.rig.json` (or `$RIG_GLOBAL_CONFIG`) is loaded under every
+  repo's `.rig.json` — repo wins per key, `env`/`aliases`/`commands` union. Blank
+  strings count as unset, so a repo's scaffolded `coverage.license: ""` falls
+  through to a real key set once globally (never committed). `rig info` shows it.
 
 ### Changed
 - Completion no longer suggests the help-option noise aliases (`-?`, `-h`, `/?`,

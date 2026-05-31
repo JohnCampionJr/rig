@@ -33,6 +33,9 @@ internal static class InfoVerb
             _ => "current directory",
         });
         Row("config", ctx.ConfigPath is null ? "(none — all defaults)" : Rel(ctx.ConfigPath));
+        var globalConfig = RigSession.GlobalConfigPath();
+        var hasGlobal = globalConfig is not null && File.Exists(globalConfig);
+        Row("global config", hasGlobal ? globalConfig! : "(none)");
         Row("solution", solution is null ? "(none — scanning *.csproj)" : Rel(solution));
         Row("runnable", runnable.Count == 0 ? "(none)" : string.Join(", ", runnable));
         Row("default project", session.Config.DefaultProject ?? "(prompt when ambiguous)");
@@ -48,15 +51,18 @@ internal static class InfoVerb
         AnsiConsole.Write(new Rule("[aqua]rig info[/]").LeftJustified());
         AnsiConsole.Write(grid);
 
-        // Surface typo'd .rig.json keys (System.Text.Json silently ignores them).
-        if (ctx.ConfigPath is not null)
-        {
-            foreach (var (key, suggestion) in RigConfig.UnknownKeys(SafeRead(ctx.ConfigPath)))
-                Ui.Warn(suggestion is null
-                    ? $"unknown .rig.json key: \"{key}\""
-                    : $"unknown .rig.json key: \"{key}\" — did you mean \"{suggestion}\"?");
-        }
+        // Surface typo'd keys (System.Text.Json silently ignores them) in both files.
+        if (ctx.ConfigPath is not null) WarnUnknownKeys(".rig.json", ctx.ConfigPath);
+        if (hasGlobal) WarnUnknownKeys("~/.rig.json", globalConfig!);
         return 0;
+    }
+
+    private static void WarnUnknownKeys(string label, string path)
+    {
+        foreach (var (key, suggestion) in RigConfig.UnknownKeys(SafeRead(path)))
+            Ui.Warn(suggestion is null
+                ? $"unknown {label} key: \"{key}\""
+                : $"unknown {label} key: \"{key}\" — did you mean \"{suggestion}\"?");
     }
 
     private static string SafeRead(string path)

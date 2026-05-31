@@ -24,6 +24,48 @@ public sealed class RigConfigTests
     }
 
     [TestMethod]
+    public void Merge_lets_the_repo_win_per_key_and_unions_dictionaries()
+    {
+        var global = RigConfig.Parse("""
+            {
+              "defaultProject": "GlobalApp",
+              "env": { "SHARED": "g", "ONLY_GLOBAL": "g" },
+              "aliases": { "coverage": "cov", "publish": "ship" }
+            }
+            """);
+        var repo = RigConfig.Parse("""
+            {
+              "defaultProject": "RepoApp",
+              "env": { "SHARED": "r", "ONLY_REPO": "r" },
+              "aliases": { "coverage": "c" }
+            }
+            """);
+
+        var merged = RigConfig.Merge(global, repo);
+
+        merged.DefaultProject.Should().Be("RepoApp");                 // repo wins
+        merged.Env!["SHARED"].Should().Be("r");                       // repo wins per key
+        merged.Env["ONLY_GLOBAL"].Should().Be("g");                   // global preserved
+        merged.Env["ONLY_REPO"].Should().Be("r");                     // repo added
+        merged.Aliases!["coverage"].Should().Be("c");                 // repo override
+        merged.Aliases["publish"].Should().Be("ship");                // global-only kept
+    }
+
+    [TestMethod]
+    public void Merge_blank_repo_license_does_not_shadow_the_global_one()
+    {
+        // The repo's scaffolded `coverage.license: ""` must fall through to the
+        // real key set once in ~/.rig.json — the whole point of a global config.
+        var global = RigConfig.Parse("""{ "coverage": { "license": "PRO-KEY" } }""");
+        var repo = RigConfig.Parse("""{ "coverage": { "license": "", "collector": "mtp" } }""");
+
+        var merged = RigConfig.Merge(global, repo);
+
+        merged.Coverage!.License.Should().Be("PRO-KEY"); // blank "" treated as unset
+        merged.Coverage.Collector.Should().Be("mtp");    // repo's real value still wins
+    }
+
+    [TestMethod]
     public void Missing_file_yields_defaults()
     {
         var cfg = RigConfig.Load("/no/such/file.json");
