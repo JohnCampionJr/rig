@@ -27,7 +27,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>rig</ToolCommandName>
     <PackageId>rig</PackageId>
-    <Version>0.1.3</Version>
+    <Version>0.2.0</Version>
     <Description>A general-purpose .NET dev launcher: run/build/test/coverage/kill, convention-first with optional per-repo .rig.json.</Description>
     <Authors>John Campion Jr</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

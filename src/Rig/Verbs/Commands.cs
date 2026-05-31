@@ -86,6 +86,7 @@ internal sealed class CoverageCommand : Command
         { Arity = ArgumentArity.ZeroOrOne, HelpName = "name", Description = "Scope coverage to a test class/method (substring or ~/= filter)" };
     private readonly Option<bool> _full = new("--full") { Description = "Full multi-file report (default: single-file inline)" };
     private readonly Option<bool> _open = new("--open") { Description = "Open the report when done" };
+    private readonly Option<double?> _min = new("--min") { Description = "Fail (non-zero exit) if line coverage % is below this — e.g. --min 80" };
 
     public CoverageCommand() : base("coverage", "Run tests with coverage and render an HTML report")
     {
@@ -94,7 +95,9 @@ internal sealed class CoverageCommand : Command
         Arguments.Add(_name);
         Options.Add(_full);
         Options.Add(_open);
-        SetAction(pr => CoverageVerb.Execute(Cli.Session(pr), pr.GetValue(_name), pr.GetValue(_full), pr.GetValue(_open)));
+        Options.Add(_min);
+        SetAction(pr => CoverageVerb.Execute(
+            Cli.Session(pr), pr.GetValue(_name), pr.GetValue(_full), pr.GetValue(_open), pr.GetValue(_min)));
     }
 }
 

@@ -69,6 +69,7 @@ automatically (dotenv precedence).
 Coverage renders in-process via the bundled **ReportGenerator** — no separate
 install. Single-file inline report by default, `--full` for the multi-file report,
 `--open` to open it; the headline `line %·branch %` prints to the console.
+`--min <pct>` gates line coverage (non-zero exit if below — handy in CI).
 ReportGenerator **Pro** features unlock via the `REPORTGENERATOR_LICENSE` env var
 (or `.rig.json` `coverage.license`) — `rig` bundles only the free Apache-2.0 engine.
 

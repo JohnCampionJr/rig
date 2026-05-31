@@ -4,6 +4,26 @@ namespace Rig.Tests;
 public sealed class RigConfigTests
 {
     [TestMethod]
+    public void Unknown_keys_are_detected_with_a_suggestion()
+    {
+        var unknown = RigConfig.UnknownKeys("""
+            { "defualtProject": "App", "test": {}, "totallyMadeUp": 1 }
+            """);
+
+        unknown.Should().HaveCount(2);
+        unknown.Should().ContainSingle(u => u.Key == "defualtProject").Which.Suggestion.Should().Be("defaultProject");
+        // a far-off key still reports, but without a (misleading) suggestion
+        unknown.Should().ContainSingle(u => u.Key == "totallyMadeUp").Which.Suggestion.Should().BeNull();
+    }
+
+    [TestMethod]
+    public void Known_keys_produce_no_warnings()
+    {
+        RigConfig.UnknownKeys("""{ "$schema": "x", "solution": "a.slnx", "aliases": {} }""")
+            .Should().BeEmpty();
+    }
+
+    [TestMethod]
     public void Missing_file_yields_defaults()
     {
         var cfg = RigConfig.Load("/no/such/file.json");

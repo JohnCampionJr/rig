@@ -47,7 +47,21 @@ internal static class InfoVerb
 
         AnsiConsole.Write(new Rule("[aqua]rig info[/]").LeftJustified());
         AnsiConsole.Write(grid);
+
+        // Surface typo'd .rig.json keys (System.Text.Json silently ignores them).
+        if (ctx.ConfigPath is not null)
+        {
+            foreach (var (key, suggestion) in RigConfig.UnknownKeys(SafeRead(ctx.ConfigPath)))
+                Ui.Warn(suggestion is null
+                    ? $"unknown .rig.json key: \"{key}\""
+                    : $"unknown .rig.json key: \"{key}\" — did you mean \"{suggestion}\"?");
+        }
         return 0;
+    }
+
+    private static string SafeRead(string path)
+    {
+        try { return File.ReadAllText(path); } catch { return string.Empty; }
     }
 
     private static string EnvSummary(RigSession session)

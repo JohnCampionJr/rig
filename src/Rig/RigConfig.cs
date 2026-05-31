@@ -39,6 +39,58 @@ internal sealed class RigConfig
 
     public static RigConfig Parse(string json) =>
         JsonSerializer.Deserialize<RigConfig>(json, Options) ?? new RigConfig();
+
+    private static readonly string[] KnownKeys =
+        ["$schema", "solution", "defaultProject", "test", "coverage", "kill", "rebuild", "publish", "env", "commands", "aliases"];
+
+    /// <summary>
+    /// Top-level keys in the JSON that rig doesn't recognize (typos). System.Text.Json
+    /// silently ignores them, so this surfaces them (with a "did you mean" guess) for
+    /// <c>rig info</c>. Never throws.
+    /// </summary>
+    public static IReadOnlyList<(string Key, string? Suggestion)> UnknownKeys(string json)
+    {
+        var result = new List<(string, string?)>();
+        try
+        {
+            using var doc = JsonDocument.Parse(json,
+                new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+            if (doc.RootElement.ValueKind != JsonValueKind.Object) return result;
+
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                if (KnownKeys.Any(k => string.Equals(k, prop.Name, StringComparison.OrdinalIgnoreCase))) continue;
+                result.Add((prop.Name, ClosestKey(prop.Name)));
+            }
+        }
+        catch { /* malformed JSON is the loader's problem, not ours */ }
+        return result;
+    }
+
+    private static string? ClosestKey(string key)
+    {
+        var (best, bestDistance) = (default(string), int.MaxValue);
+        foreach (var known in KnownKeys)
+        {
+            var d = Levenshtein(key.ToLowerInvariant(), known.ToLowerInvariant());
+            if (d < bestDistance) (best, bestDistance) = (known, d);
+        }
+        return bestDistance <= 3 ? best : null; // only suggest a plausibly-close match
+    }
+
+    private static int Levenshtein(string a, string b)
+    {
+        var d = new int[a.Length + 1, b.Length + 1];
+        for (var i = 0; i <= a.Length; i++) d[i, 0] = i;
+        for (var j = 0; j <= b.Length; j++) d[0, j] = j;
+        for (var i = 1; i <= a.Length; i++)
+            for (var j = 1; j <= b.Length; j++)
+            {
+                var cost = a[i - 1] == b[j - 1] ? 0 : 1;
+                d[i, j] = Math.Min(Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1), d[i - 1, j - 1] + cost);
+            }
+        return d[a.Length, b.Length];
+    }
 }
 
 internal sealed class TestConfig

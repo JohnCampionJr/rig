@@ -85,7 +85,11 @@ internal static class CoverageVerb
         return ok && File.Exists(index) ? index : null;
     }
 
-    public static int Execute(RigSession session, string? name, bool full, bool open)
+    /// <summary>Line coverage (0–1) meets the minimum %, or no minimum is set.</summary>
+    internal static bool MeetsMinimum(double? lineRate, double? minPercent) =>
+        minPercent is not { } min || (lineRate is { } rate && rate * 100 >= min);
+
+    public static int Execute(RigSession session, string? name, bool full, bool open, double? min = null)
     {
         ProjectDiscovery.WarnMultipleSolutions(session.Root, session.Config.Solution);
         var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
@@ -128,6 +132,22 @@ internal static class CoverageVerb
             Ui.Success($"Coverage: line {Pct(line.Value)} · branch {Pct(branch ?? 0)}");
         Ui.Success($"Report: {index}");
         if (open) Exec.OpenPath(index);
+
+        // Threshold gate (line coverage). Non-zero exit if below — useful in CI / pre-push.
+        if (min is { } threshold)
+        {
+            if (line is not { } lineRate)
+            {
+                Ui.Error($"--min {threshold:0.#}: could not read line coverage from the report.");
+                return 1;
+            }
+            if (!MeetsMinimum(line, min))
+            {
+                Ui.Error($"Line coverage {Pct(lineRate)} is below the required minimum of {threshold:0.#}%.");
+                return 1;
+            }
+            Ui.Success($"Line coverage {Pct(lineRate)} meets the {threshold:0.#}% minimum.");
+        }
         return 0;
     }
 

@@ -6,6 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- `rig coverage --min <pct>` fails with a non-zero exit when line coverage is
+  below the threshold — useful in CI and as a local pre-push gate.
+- `rig info` now flags unknown/typo'd top-level `.rig.json` keys (with a "did you
+  mean …?" suggestion); System.Text.Json otherwise ignores them silently.
+
 ### Changed
 - Completion no longer suggests the help-option noise aliases (`-?`, `-h`, `/?`,
   `/h`) — `-h`/`--help` still work, they're just hidden from suggestions. Useful

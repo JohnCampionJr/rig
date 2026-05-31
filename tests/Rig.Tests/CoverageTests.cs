@@ -4,6 +4,17 @@ namespace Rig.Tests;
 public sealed class CoverageTests
 {
     [TestMethod]
+    public void MeetsMinimum_gates_line_coverage()
+    {
+        // first arg = line rate (0–1), second = required percent
+        CoverageVerb.MeetsMinimum(0.75, null).Should().BeTrue();   // no gate
+        CoverageVerb.MeetsMinimum(0.75, 70).Should().BeTrue();     // 75 >= 70
+        CoverageVerb.MeetsMinimum(0.75, 80).Should().BeFalse();    // 75 < 80
+        CoverageVerb.MeetsMinimum(0.80, 80).Should().BeTrue();     // boundary
+        CoverageVerb.MeetsMinimum(null, 80).Should().BeFalse();    // unreadable → can't meet
+    }
+
+    [TestMethod]
     public void Collector_respects_explicit_config()
     {
         CoverageVerb.DetectCollector(null, "mtp").Should().Be(CoverageVerb.CollectorMode.Mtp);
