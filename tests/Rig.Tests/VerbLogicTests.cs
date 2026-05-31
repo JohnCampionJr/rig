@@ -115,29 +115,85 @@ public sealed class VerbLogicTests
     }
 
     [TestMethod]
-    public void Kill_falls_back_to_default_then_first_runnable()
+    public void Kill_with_no_arg_sweeps_every_runnable_project()
     {
-        KillVerb.ResolvePatterns(new RigConfig { DefaultProject = "Foo" }, [Exe("App")])
-            .Should().BeEquivalentTo("Foo");
-        KillVerb.ResolvePatterns(new RigConfig(), [Exe("App")])
-            .Should().BeEquivalentTo("App");
+        // The "stop everything I started" sweep — all runnables, libs/tests excluded.
+        KillVerb.ResolvePatterns(new RigConfig(), [Exe("App"), Exe("MicaSpike"), Lib("Core")])
+            .Should().BeEquivalentTo("App", "MicaSpike");
+        // defaultProject no longer narrows a bare kill.
+        KillVerb.ResolvePatterns(new RigConfig { DefaultProject = "App" }, [Exe("App"), Exe("MicaSpike")])
+            .Should().BeEquivalentTo("App", "MicaSpike");
         KillVerb.ResolvePatterns(new RigConfig(), [Lib("OnlyLib")])
             .Should().BeEmpty();
     }
 
     [TestMethod]
-    public void Kill_pattern_is_platform_aware_for_assembly_name()
+    public void Kill_with_arg_targets_the_named_project()
+    {
+        var projects = new[] { Exe("Acme.App"), Exe("Acme.MicaSpike"), Lib("Core") };
+
+        // short-name exact, then substring; a raw non-match is honored as-is.
+        KillVerb.ResolvePatterns(new RigConfig(), projects, "MicaSpike")
+            .Should().BeEquivalentTo("Acme.MicaSpike");
+        KillVerb.ResolvePatterns(new RigConfig(), projects, "Acme")
+            .Should().BeEquivalentTo("Acme.App", "Acme.MicaSpike");
+        KillVerb.ResolvePatterns(new RigConfig(), projects, "ghost")
+            .Should().BeEquivalentTo("ghost");
+
+        // config kill.match still wins over an arg.
+        KillVerb.ResolvePatterns(new RigConfig { Kill = new KillConfig { Match = ["Pinned"] } }, projects, "MicaSpike")
+            .Should().BeEquivalentTo("Pinned");
+    }
+
+    [TestMethod]
+    public void Kill_pattern_is_the_project_name_not_the_assembly_name()
     {
         var app = new ProjectInfo("App", "App/App.csproj", "/r/App/App.csproj",
             "Exe", "net8.0", IsTest: false, AssemblyName: "AcmeApp");
 
-        // Windows taskkill /IM → the image (AssemblyName); Unix pkill -f → the
-        // targeted project name (narrower than a short AssemblyName).
-        var expected = OperatingSystem.IsWindows() ? "AcmeApp" : "App";
+        // Both platforms match the full command line, so the (narrower) project name
+        // is the target — present in the `dotnet run --project` cmdline and the
+        // apphost path — never the AssemblyName.
         KillVerb.ResolvePatterns(new RigConfig { DefaultProject = "App" }, [app])
-            .Should().BeEquivalentTo(expected);
+            .Should().BeEquivalentTo("App");
         KillVerb.ResolvePatterns(new RigConfig(), [app])
-            .Should().BeEquivalentTo(expected);
+            .Should().BeEquivalentTo("App");
+    }
+
+    // ---- KillVerb command-line matching (Windows CIM) ----
+
+    [TestMethod]
+    public void Kill_parses_tab_delimited_pid_and_command_line()
+    {
+        // PID<tab>CommandLine, CRLF endings, a command-line-less system process, and
+        // a blank line — exactly the shape the CIM query emits.
+        var output = "1001\tC:\\dotnet.exe run --project C:\\src\\App\\App.csproj\r\n" +
+                     "1002\tC:\\src\\App\\bin\\Debug\\net8.0\\App.exe\r\n" +
+                     "4\t\r\n" +
+                     "\r\n";
+        var procs = KillVerb.ParseProcessList(output);
+
+        procs.Should().HaveCount(3);
+        procs[0].Should().Be((1001, "C:\\dotnet.exe run --project C:\\src\\App\\App.csproj"));
+        procs[2].Should().Be((4, string.Empty)); // system process, empty command line
+    }
+
+    [TestMethod]
+    public void Kill_matches_driver_and_apphost_but_not_self_or_unrelated()
+    {
+        var procs = new List<(int, string)>
+        {
+            (1001, "C:\\dotnet.exe run --project C:\\src\\App\\App.csproj"), // the run/watch driver
+            (1002, "C:\\src\\App\\bin\\Debug\\net8.0\\App.exe"),             // the apphost
+            (1003, "C:\\dotnet.exe run --project C:\\src\\Other\\Other.csproj"),
+            (4,    ""),                                                       // system process
+            (777,  "rig kill App"),                                          // ourselves
+        };
+
+        var matched = KillVerb.MatchProcesses(procs, "App", selfPid: 777)
+            .Select(p => p.Pid).ToList();
+
+        matched.Should().BeEquivalentTo([1001, 1002]); // driver + apphost; not Other, system, or self
     }
 
     // ---- PublishVerb ----

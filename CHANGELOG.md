@@ -13,6 +13,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Interactive menu: picking `run` or `publish` now opens a project sub-menu (the
   configured default is marked) instead of silently firing the default — so other
   projects are discoverable. `publish` no longer errors on ambiguity from the menu.
+- `rig kill [project]` now takes an optional project argument to target one app,
+  and with no argument sweeps **every** runnable project (not just the default) —
+  the "stop everything I started" behavior.
+
+### Changed
+- `rig kill` on Windows now matches the **full command line** via CIM
+  (`Win32_Process.CommandLine`) and kills each match's process tree (`taskkill /T`),
+  matching the Unix `pkill -f` behavior. Previously it matched only the image name
+  (`taskkill /IM`), so the `dotnet run`/`dotnet watch` driver survived (and could
+  respawn the app), and a framework-dependent run with no apphost was missed
+  entirely. `kill.match` patterns are now command-line substrings on both platforms.
 
 ## [1.0.0] - 2026-05-31
 

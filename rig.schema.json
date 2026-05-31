@@ -13,7 +13,7 @@
     },
     "defaultProject": {
       "type": "string",
-      "description": "Project run by `rig run` with no argument; also the default kill-match source."
+      "description": "Project run by `rig run` with no argument."
     },
     "test": {
       "type": "object",
@@ -68,7 +68,7 @@
         "match": {
           "type": "array",
           "items": { "type": "string" },
-          "description": "Process name/substring patterns to terminate."
+          "description": "Command-line substring patterns to terminate (matched against the full process command line: pkill -f on Unix, CIM CommandLine on Windows). Overrides the default 'all runnable projects' sweep."
         }
       }
     },

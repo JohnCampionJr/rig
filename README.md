@@ -38,7 +38,7 @@ be inferred.
 | `coverage [name]` | `c` | Tests + coverage; in-process HTML report; `--full`, `--open`, `--min` |
 | `add <package>` | — | Add a NuGet package to the default/sole project (`--project` to target; args after `--` forward) |
 | `outdated` | `od` | List packages with newer versions (`--vulnerable`, `--deprecated`, `--transitive`, `--prerelease`); restores first if needed |
-| `kill` | `k` | Terminate the app/test processes (`--dry-run` lists what would die) |
+| `kill [project]` | `k` | Terminate app processes (bare = all runnable; name one to target it; `--dry-run` lists what would die) |
 | `publish [project]` | `pub` | Self-contained `dotnet publish` (`-c`/`-r`/`-o`/`--self-contained`/`--single-file`) |
 | `default [project]` | `def` | Show or set the default run project (no run) |
 | `info` | `i` | Show what rig discovered/resolved for this repo |

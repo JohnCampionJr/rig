@@ -64,6 +64,15 @@ internal static class Menu
                 return root.Parse([pick, project]).Invoke();
             }
 
+            // kill targets every runnable project (the bare sweep) or just one —
+            // surface that choice instead of silently sweeping.
+            if (pick == "kill")
+            {
+                var args = KillSubmenu(runnable, defaultProject);
+                if (args is null) continue; // back
+                return root.Parse(args).Invoke();
+            }
+
             return root.Parse(ArgsFor(pick)).Invoke();
         }
     }
@@ -89,6 +98,32 @@ internal static class Menu
                 .AddChoices([.. projects, back]));
 
         return pick == back ? null : pick;
+    }
+
+    // Kill's sub-menu: every runnable project (bare `rig kill`) or one specific
+    // project. With 0–1 runnables there's nothing to choose — delegate to bare
+    // `kill` (which uses kill.match config / the sole runnable / warns). Returns the
+    // parse args, or null to go back.
+    private static string[]? KillSubmenu(IReadOnlyList<string> projects, string? defaultProject)
+    {
+        if (projects.Count <= 1) return ["kill"];
+
+        const string all = "all runnable projects";
+        const string back = "← back";
+        bool IsDefault(string p) => defaultProject is not null &&
+            (string.Equals(p, defaultProject, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(ShortName(p), defaultProject, StringComparison.OrdinalIgnoreCase));
+
+        var pick = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("Kill which? [grey](terminates matching processes)[/]")
+                .PageSize(20)
+                .UseConverter(p => p == back ? "[grey]← back[/]"
+                    : p == all ? all
+                    : IsDefault(p) ? $"{p} [grey](default)[/]" : p)
+                .AddChoices([all, .. projects, back]));
+
+        return pick == back ? null : pick == all ? ["kill"] : ["kill", pick];
     }
 
     private static string ShortName(string name) =>

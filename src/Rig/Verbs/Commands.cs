@@ -141,14 +141,19 @@ internal sealed class OutdatedCommand : Command
 
 internal sealed class KillCommand : Command
 {
-    public KillCommand() : base("kill", "Terminate matching app/test processes")
+    private readonly Argument<string?> _project =
+        new("project") { Arity = ArgumentArity.ZeroOrOne, HelpName = "project", Description = "Project to kill (substring / short-name match); omit to kill all runnable projects" };
+
+    public KillCommand() : base("kill", "Terminate matching app/test processes (omit project = all runnable)")
     {
         Aliases.Add("k");
+        _project.CompletionSources.Add(_ => Completions.RunnableProjects());
+        Arguments.Add(_project);
         SetAction(pr =>
         {
             var s = Cli.Session(pr);
             var projects = ProjectDiscovery.Discover(s.Root, s.Config.Solution, s.Config.Exclude);
-            return KillVerb.Execute(s, projects);
+            return KillVerb.Execute(s, projects, pr.GetValue(_project));
         });
     }
 }
