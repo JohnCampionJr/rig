@@ -272,6 +272,17 @@ internal sealed class SetupCommand : Command
     }
 }
 
+internal sealed class UpdateCommand : Command
+{
+    private readonly Option<bool> _check = new("--check") { Description = "Only report whether a newer rig is available; don't install" };
+
+    public UpdateCommand() : base("update", "Update rig itself to the latest published version")
+    {
+        Options.Add(_check);
+        SetAction(pr => UpdateVerb.Execute(Cli.Session(pr), pr.GetValue(_check)));
+    }
+}
+
 internal sealed class CompletionCommand : Command
 {
     private readonly Argument<string?> _shell = new("shell") { Arity = ArgumentArity.ZeroOrOne, Description = "zsh | bash | pwsh" };

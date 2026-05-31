@@ -44,6 +44,7 @@ be inferred.
 | `info` | `i` | Show what rig discovered/resolved for this repo |
 | `init` | — | Scaffold a commented `.rig.json` |
 | `setup` | — | Interactive walkthrough — set local/global prefs without hand-editing |
+| `update` | — | Update rig itself to the latest published version (`--check` to only report) |
 | `completion <shell>` | `comp` | Print self-contained shell-completion setup (zsh/bash/pwsh) |
 
 Bare `rig` opens an interactive menu: the everyday verbs up top, the rest under

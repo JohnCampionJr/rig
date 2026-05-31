@@ -6,6 +6,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- `rig update [--check]` — updates the rig tool itself to the latest published
+  version (checks nuget.org for what's newer than the running build). `--check`
+  only reports. On macOS/Linux it updates in place; on Windows — where the running
+  `rig.exe` is locked — it hands off to a detached helper that waits for rig to
+  exit, then updates in a new window.
+
 ## [1.1.0] - 2026-05-31
 
 ### Added

@@ -239,6 +239,28 @@ public sealed class VerbLogicTests
         AddVerb.ResolveTarget([Exe("App")], "nope", null).Error.Should().NotBeNull();
     }
 
+    // ---- UpdateVerb (version comparison) ----
+
+    [TestMethod]
+    public void Update_latest_stable_ignores_prereleases()
+    {
+        UpdateVerb.LatestStable(["0.1.0", "1.0.0", "1.1.0", "1.2.0-beta", "0.9.0"]).Should().Be("1.1.0");
+        UpdateVerb.LatestStable(["2.0.0-rc1", "1.5.0"]).Should().Be("1.5.0");
+        UpdateVerb.LatestStable(["1.0.0-alpha"]).Should().BeNull(); // only prereleases
+        UpdateVerb.LatestStable([]).Should().BeNull();
+    }
+
+    [TestMethod]
+    public void Update_is_newer_compares_and_treats_unknown_current_as_outdated()
+    {
+        UpdateVerb.IsNewer("1.0.0", "1.1.0").Should().BeTrue();
+        UpdateVerb.IsNewer("1.1.0", "1.1.0").Should().BeFalse();
+        UpdateVerb.IsNewer("1.2.0", "1.1.0").Should().BeFalse();
+        UpdateVerb.IsNewer("1.1.0+abc123", "1.2.0").Should().BeTrue(); // build metadata stripped
+        UpdateVerb.IsNewer(null, "1.1.0").Should().BeTrue();           // unknown current → offer update
+        UpdateVerb.IsNewer("1.0.0", "garbage").Should().BeFalse();     // unparseable latest → no
+    }
+
     // ---- OutdatedVerb.BuildArgs ----
 
     [TestMethod]
