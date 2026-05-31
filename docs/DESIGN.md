@@ -44,10 +44,11 @@ short forms are real `Command.Aliases` (resolved + shown in help natively).
   `DotEnv`, `ConfigWriter`/`JsoncEditor`, `PrefixResolver`, `Completions`, `Ui`.
 
 ```
+rig.schema.json         # JSON Schema for .rig.json (at root → stable $schema URL)
 src/Rig/
   Program.cs            # RootCommand + flat registry + prefix rewrite
   Verbs/*Command.cs     # wiring          *Verb.cs # logic (no CLI types)
-  ...core helpers...    rig.schema.json
+  ...core helpers...
 tests/Rig.Tests/        # MSTest (Microsoft.Testing.Platform) + AwesomeAssertions
 ```
 
