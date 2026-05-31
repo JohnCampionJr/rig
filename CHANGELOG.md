@@ -18,6 +18,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   repo's `.rig.json` — repo wins per key, `env`/`aliases`/`commands` union. Blank
   strings count as unset, so a repo's scaffolded `coverage.license: ""` falls
   through to a real key set once globally (never committed). `rig info` shows it.
+- `rig info` now tags each config-sourced setting with its provenance —
+  `(local)`, `(global)`, or `(local+global)` — and adds a `coverage license` row
+  (masked: shows `set (Pro)` + source, never the key). Markers appear only when a
+  global config is present.
 
 ### Changed
 - Completion no longer suggests the help-option noise aliases (`-?`, `-h`, `/?`,

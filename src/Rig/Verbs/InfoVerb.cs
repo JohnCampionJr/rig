@@ -19,10 +19,29 @@ internal static class InfoVerb
         var runsettings = CoverageVerb.FindRunsettings(testDir, session.Root);
         var collector = CoverageVerb.DetectCollector(testProject, session.Config.Coverage?.Collector);
 
+        var globalConfig = RigSession.GlobalConfigPath();
+        var hasGlobal = globalConfig is not null && File.Exists(globalConfig);
+        // Re-load each layer on its own to attribute settings to local vs global.
+        var repoCfg = RigConfig.Load(ctx.ConfigPath);
+        var globalCfg = hasGlobal ? RigConfig.Load(globalConfig) : new RigConfig();
+
         string Rel(string? p) => string.IsNullOrEmpty(p) ? "(none)" : Path.GetRelativePath(session.Root, p);
+        static bool Set(string? s) => !string.IsNullOrWhiteSpace(s);
+        static bool Any<T>(Dictionary<string, T>? d) => d is { Count: > 0 };
+
+        // A " (local/global)" provenance marker — only when a global config exists
+        // (otherwise every config value is trivially local and the tag is noise).
+        string Origin(bool local, bool global) => !hasGlobal ? "" : (local, global) switch
+        {
+            (true, true) => "  [grey](local+global)[/]",
+            (true, false) => "  [grey](local)[/]",
+            (false, true) => "  [grey](global)[/]",
+            _ => "",
+        };
 
         var grid = new Grid().AddColumn().AddColumn();
-        void Row(string label, string value) => grid.AddRow($"[grey]{label}[/]", Markup.Escape(value));
+        void Row(string label, string value, string origin = "") =>
+            grid.AddRow($"[grey]{label}[/]", Markup.Escape(value) + origin);
 
         Row("root", session.Root);
         Row("anchor", ctx.Anchor switch
@@ -33,20 +52,24 @@ internal static class InfoVerb
             _ => "current directory",
         });
         Row("config", ctx.ConfigPath is null ? "(none — all defaults)" : Rel(ctx.ConfigPath));
-        var globalConfig = RigSession.GlobalConfigPath();
-        var hasGlobal = globalConfig is not null && File.Exists(globalConfig);
         Row("global config", hasGlobal ? globalConfig! : "(none)");
-        Row("solution", solution is null ? "(none — scanning *.csproj)" : Rel(solution));
+        Row("solution", solution is null ? "(none — scanning *.csproj)" : Rel(solution),
+            Origin(Set(repoCfg.Solution), Set(globalCfg.Solution)));
         Row("runnable", runnable.Count == 0 ? "(none)" : string.Join(", ", runnable));
-        Row("default project", session.Config.DefaultProject ?? "(prompt when ambiguous)");
+        Row("default project", session.Config.DefaultProject ?? "(prompt when ambiguous)",
+            Origin(Set(repoCfg.DefaultProject), Set(globalCfg.DefaultProject)));
         Row("test project", Rel(testProject));
         Row("coverage runsettings", Rel(runsettings));
         Row("coverage collector", collector == CoverageVerb.CollectorMode.Mtp ? "MTP (--coverage)" : "VSTest (XPlat)");
+        Row("coverage license", Set(session.Config.Coverage?.License) ? "set (Pro)" : "(none — free engine)",
+            Origin(Set(repoCfg.Coverage?.License), Set(globalCfg.Coverage?.License)));
         Row("env files", EnvSummary(session));
-        Row("custom commands", session.Config.Commands is { Count: > 0 } c ? string.Join(", ", c.Keys) : "(none)");
+        Row("custom commands", session.Config.Commands is { Count: > 0 } c ? string.Join(", ", c.Keys) : "(none)",
+            Origin(Any(repoCfg.Commands), Any(globalCfg.Commands)));
         Row("alias overrides", session.Config.Aliases is { Count: > 0 } a
             ? string.Join(", ", a.Select(kv => $"{kv.Value}→{kv.Key}"))
-            : "(built-in defaults)");
+            : "(built-in defaults)",
+            Origin(Any(repoCfg.Aliases), Any(globalCfg.Aliases)));
 
         AnsiConsole.Write(new Rule("[aqua]rig info[/]").LeftJustified());
         AnsiConsole.Write(grid);
