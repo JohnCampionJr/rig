@@ -28,6 +28,7 @@ internal static class JsoncEditor
     public static bool TrySet(string text, IReadOnlyList<string> path, string rawValue, out string result)
     {
         result = text;
+        if (text.Length > 0 && text[0] == '\uFEFF') text = text[1..]; // tolerate a leading BOM
         return path.Count switch
         {
             1 => SetTopLevel(text, path[0], rawValue, out result),
@@ -194,10 +195,16 @@ internal static class JsoncEditor
         // Parent object present, child absent → insert the child member.
         if (parentMatched && parentIsObject && parentContentStart >= 0)
         {
-            if (parentFirstMember >= 0)
+            // A single-line parent (e.g. the init template's `"coverage": { ... }`)
+            // gets an inline insert; a multi-line one matches its members' indent.
+            if (parentFirstMember >= 0 && HasNewline(bytes, parentContentStart, parentFirstMember))
             {
                 var indent = IndentBefore(bytes, parentFirstMember);
                 result = Splice(bytes, parentContentStart, parentContentStart, $"\n{indent}\"{child}\": {rawValue},");
+            }
+            else if (parentFirstMember >= 0) // single-line object with members
+            {
+                result = Splice(bytes, parentContentStart, parentContentStart, $" \"{child}\": {rawValue},");
             }
             else // empty object: "coverage": {}
             {
@@ -222,6 +229,13 @@ internal static class JsoncEditor
             return true;
         }
 
+        return false;
+    }
+
+    private static bool HasNewline(byte[] bytes, long start, long end)
+    {
+        for (var i = start; i < end && i < bytes.Length; i++)
+            if (bytes[i] == (byte)'\n') return true;
         return false;
     }
 

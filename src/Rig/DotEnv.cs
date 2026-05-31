@@ -64,15 +64,30 @@ internal static class DotEnv
         if (raw.Length == 0) return string.Empty;
 
         var q = raw[0];
-        if (q is '"' or '\'')
+        if (q == '\'') // single quotes are literal — first closing quote wins
         {
-            var end = raw.IndexOf(q, 1);
-            var inner = end < 0 ? raw[1..] : raw[1..end];
-            return q == '"' ? Unescape(inner) : inner;
+            var end = raw.IndexOf('\'', 1);
+            return end < 0 ? raw[1..] : raw[1..end];
+        }
+        if (q == '"') // double quotes honour escapes, incl. an escaped \" inside
+        {
+            var end = ClosingDoubleQuote(raw);
+            return Unescape(end < 0 ? raw[1..] : raw[1..end]);
         }
 
         var comment = InlineCommentIndex(raw);
         return (comment < 0 ? raw : raw[..comment]).Trim();
+    }
+
+    // Index of the closing double-quote, skipping any backslash-escaped char.
+    private static int ClosingDoubleQuote(string s)
+    {
+        for (var i = 1; i < s.Length; i++)
+        {
+            if (s[i] == '\\') { i++; continue; } // skip the escaped char
+            if (s[i] == '"') return i;
+        }
+        return -1;
     }
 
     private static int InlineCommentIndex(string s)

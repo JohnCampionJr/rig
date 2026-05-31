@@ -169,4 +169,26 @@ public sealed class JsoncEditorTests
         // "coverage" is a string here — merging a child would destroy it, so bail.
         JsoncEditor.TrySet("""{ "coverage": "oops" }""", ["coverage", "open"], "true", out _).Should().BeFalse();
     }
+
+    [TestMethod]
+    public void Inserts_inline_into_a_single_line_parent_object()
+    {
+        var src = """{ "coverage": { "license": "" } }""";
+
+        JsoncEditor.TrySet(src, ["coverage", "open"], "true", out var result).Should().BeTrue();
+
+        result.Should().NotContain("\n"); // stays on one line — no stray newline
+        var cov = RigConfig.Parse(result).Coverage!;
+        cov.Open.Should().BeTrue();
+        cov.License.Should().Be("");
+    }
+
+    [TestMethod]
+    public void Tolerates_a_leading_BOM()
+    {
+        var src = "\uFEFF{ \"defaultProject\": \"Old\" }";
+
+        JsoncEditor.TrySet(src, ["defaultProject"], "\"New\"", out var result).Should().BeTrue();
+        RigConfig.Parse(result).DefaultProject.Should().Be("New");
+    }
 }

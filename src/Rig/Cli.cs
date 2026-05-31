@@ -19,6 +19,11 @@ internal static class Cli
         Recursive = true,
     };
 
+    /// <summary>Tokens after the first <c>--</c>, split off before parsing (see
+    /// Program.cs) and forwarded verbatim — kept off the parser so they can't bind
+    /// to a verb's optional positional argument.</summary>
+    public static string[] PassThrough = [];
+
     public static RigSession Session(ParseResult parse)
     {
         var session = RigSession.Load(Directory.GetCurrentDirectory(), useDotEnv: !parse.GetValue(NoEnv));
@@ -28,7 +33,7 @@ internal static class Cli
         return session;
     }
 
-    /// <summary>Tokens the parser didn't consume (post-<c>--</c> args and
-    /// unrecognized flags) — forwarded verbatim to the spawned tool.</summary>
-    public static string[] Forwarded(ParseResult parse) => parse.UnmatchedTokens.ToArray();
+    /// <summary>Args forwarded to the spawned tool: unrecognized flags the parser
+    /// didn't consume, then the explicit post-<c>--</c> <see cref="PassThrough"/>.</summary>
+    public static string[] Forwarded(ParseResult parse) => [.. parse.UnmatchedTokens, .. PassThrough];
 }

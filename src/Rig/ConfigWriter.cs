@@ -23,30 +23,34 @@ internal static class ConfigWriter
         return path;
     }
 
-    public static void SetString(string filePath, IReadOnlyList<string> path, string value) =>
+    public static bool SetString(string filePath, IReadOnlyList<string> path, string value) =>
         Set(filePath, path, JsonSerializer.Serialize(value));
 
-    public static void SetBool(string filePath, IReadOnlyList<string> path, bool value) =>
+    public static bool SetBool(string filePath, IReadOnlyList<string> path, bool value) =>
         Set(filePath, path, value ? "true" : "false");
 
-    public static void SetNumber(string filePath, IReadOnlyList<string> path, double value) =>
+    public static bool SetNumber(string filePath, IReadOnlyList<string> path, double value) =>
         Set(filePath, path, value.ToString(CultureInfo.InvariantCulture));
 
     /// <summary>Splice <paramref name="path"/> = <paramref name="rawValue"/> (a raw
-    /// JSON literal) into the file, preserving comments where possible.</summary>
-    public static void Set(string filePath, IReadOnlyList<string> path, string rawValue)
+    /// JSON literal) into the file, preserving comments where possible. Returns
+    /// false (writing nothing) when an existing, non-empty file can't be edited in
+    /// place — we never overwrite a file that has real content to lose.</summary>
+    public static bool Set(string filePath, IReadOnlyList<string> path, string rawValue)
     {
-        if (File.Exists(filePath))
+        var existing = File.Exists(filePath) ? File.ReadAllText(filePath) : null;
+        if (!string.IsNullOrWhiteSpace(existing))
         {
-            var text = File.ReadAllText(filePath);
-            if (JsoncEditor.TrySet(text, path, rawValue, out var edited))
+            // A real file: splice in place, or refuse rather than clobber it.
+            if (JsoncEditor.TrySet(existing, path, rawValue, out var edited))
             {
                 File.WriteAllText(filePath, edited);
-                return;
+                return true;
             }
+            return false;
         }
 
-        // New / empty / unparseable file: write a fresh minimal document.
+        // No file (or an empty/whitespace one): safe to write a fresh document.
         var root = new JsonObject { ["$schema"] = SchemaUrl };
         JsonObject node = root;
         for (var i = 0; i < path.Count - 1; i++)
@@ -59,5 +63,6 @@ internal static class ConfigWriter
 
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(filePath))!);
         File.WriteAllText(filePath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n");
+        return true;
     }
 }

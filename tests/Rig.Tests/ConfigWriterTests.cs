@@ -35,6 +35,31 @@ public sealed class ConfigWriterTests
     }
 
     [TestMethod]
+    public void Refuses_to_clobber_an_existing_file_it_cannot_edit_in_place()
+    {
+        using var t = new TempDir();
+        var path = Path.Combine(t.Path, ".rig.json");
+        // "coverage" is a non-object here, so coverage.open can't be spliced.
+        File.WriteAllText(path, """{ "defaultProject": "Keep", "coverage": "weird" }""");
+
+        var ok = ConfigWriter.SetBool(path, ["coverage", "open"], true);
+
+        ok.Should().BeFalse();
+        File.ReadAllText(path).Should().Contain("\"Keep\"").And.Contain("\"weird\""); // untouched
+    }
+
+    [TestMethod]
+    public void Whitespace_only_existing_file_is_written_fresh()
+    {
+        using var t = new TempDir();
+        var path = Path.Combine(t.Path, ".rig.json");
+        File.WriteAllText(path, "   \n"); // e.g. a stray `touch .rig.json`
+
+        ConfigWriter.SetString(path, ["defaultProject"], "App").Should().BeTrue();
+        RigConfig.Parse(File.ReadAllText(path)).DefaultProject.Should().Be("App");
+    }
+
+    [TestMethod]
     public void SetString_by_root_returns_the_repo_config_path()
     {
         using var t = new TempDir();

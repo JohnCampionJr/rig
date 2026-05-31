@@ -78,6 +78,17 @@ public sealed class RigConfigTests
     }
 
     [TestMethod]
+    public void Empty_whitespace_or_malformed_config_degrades_to_defaults_without_throwing()
+    {
+        RigConfig.Parse("").DefaultProject.Should().BeNull();
+        RigConfig.Parse("   \n ").DefaultProject.Should().BeNull();
+
+        using var t = new TempDir();
+        RigConfig.Load(t.Write(".rig.json", "")).DefaultProject.Should().BeNull();     // 0-byte file
+        RigConfig.Load(t.Write("bad.json", "{ not json")).DefaultProject.Should().BeNull(); // malformed
+    }
+
+    [TestMethod]
     public void Missing_file_yields_defaults()
     {
         var cfg = RigConfig.Load("/no/such/file.json");

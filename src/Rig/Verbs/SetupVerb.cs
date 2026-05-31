@@ -44,7 +44,7 @@ internal static class SetupVerb
         var current = RigConfig.Load(targetPath);
         var cov = current.Coverage;
 
-        var changes = new List<(string Display, Action Apply)>();
+        var changes = new List<(string Display, Func<bool> Apply)>();
         void AddString(string[] path, string value, string display) =>
             changes.Add(($"{string.Join('.', path)} = {display}", () => ConfigWriter.SetString(targetPath, path, value)));
         void AddBool(string[] path, bool value) =>
@@ -114,8 +114,14 @@ internal static class SetupVerb
             return 0;
         }
 
-        foreach (var (_, apply) in changes) apply();
-        Ui.Success($"Wrote {changes.Count} setting(s) to {targetPath}");
+        var written = changes.Count(c => c.Apply());
+        if (written < changes.Count)
+        {
+            Ui.Error($"Couldn't update {targetPath} in place — it has content that can't be safely edited. " +
+                     "Fix the file (or remove it) and re-run.");
+            return 1;
+        }
+        Ui.Success($"Wrote {written} setting(s) to {targetPath}");
         return 0;
     }
 

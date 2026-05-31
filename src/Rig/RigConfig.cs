@@ -42,11 +42,15 @@ internal sealed class RigConfig
     public static RigConfig Load(string? path)
     {
         if (string.IsNullOrEmpty(path) || !File.Exists(path)) return new RigConfig();
-        return Parse(File.ReadAllText(path));
+        // A malformed .rig.json shouldn't crash every command — degrade to defaults.
+        try { return Parse(File.ReadAllText(path)); }
+        catch (JsonException) { return new RigConfig(); }
     }
 
     public static RigConfig Parse(string json) =>
-        JsonSerializer.Deserialize<RigConfig>(json, Options) ?? new RigConfig();
+        string.IsNullOrWhiteSpace(json)
+            ? new RigConfig() // empty / whitespace-only file (e.g. `touch .rig.json`)
+            : JsonSerializer.Deserialize<RigConfig>(json, Options) ?? new RigConfig();
 
     /// <summary>
     /// Layer <paramref name="overlay"/> (the repo's <c>.rig.json</c>) on top of

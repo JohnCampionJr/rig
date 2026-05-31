@@ -26,7 +26,7 @@ internal static class CommandVerb
         {
             var command = spec.Shell!;
             if (passthrough.Length > 0)
-                command += " " + string.Join(' ', passthrough.Select(Exec.QuoteIfNeeded));
+                command += " " + string.Join(' ', passthrough.Select(Exec.ShellArg));
             Ui.Shell(command);
             return Exec.RunShell(command, cwd, env);
         }

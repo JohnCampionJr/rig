@@ -4,6 +4,14 @@ namespace Rig.Tests;
 public sealed class DotEnvTests
 {
     [TestMethod]
+    public void Double_quoted_value_keeps_an_escaped_quote()
+    {
+        // .env line:  KEY="a\"b c"   → value a"b c (the escaped quote isn't the end)
+        var env = DotEnv.Parse("KEY=\"a\\\"b c\"");
+        env["KEY"].Should().Be("a\"b c");
+    }
+
+    [TestMethod]
     public void Parses_basic_pairs_comments_and_blanks()
     {
         var env = DotEnv.Parse("""

@@ -61,6 +61,14 @@ internal static class Exec
 
     public static string QuoteIfNeeded(string s) => s.Contains(' ') ? $"\"{s}\"" : s;
 
+    /// <summary>Quote an argument for safe interpolation into a *shell* command
+    /// string (string-form custom commands). POSIX: single-quote wrap with the
+    /// <c>'\''</c> trick so quotes / <c>$</c> / <c>;</c> / backticks stay literal.
+    /// Windows <c>cmd</c> has no robust universal quoting, so fall back to the
+    /// display quoting there.</summary>
+    public static string ShellArg(string s) =>
+        OperatingSystem.IsWindows() ? QuoteIfNeeded(s) : "'" + s.Replace("'", "'\\''") + "'";
+
     public static void OpenPath(string path)
     {
         if (OperatingSystem.IsWindows())

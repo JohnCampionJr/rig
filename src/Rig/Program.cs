@@ -9,10 +9,17 @@ using Spectre.Console;
 
 var root = BuildRoot();
 
+// Split off everything after the first `--` ourselves: those tokens are forwarded
+// verbatim and must never be seen by the parser (otherwise the first one binds to
+// a verb's optional positional, e.g. `rig run -- migrate` → project "migrate").
+var sep = Array.IndexOf(args, "--");
+var head = sep < 0 ? args : args[..sep];
+Cli.PassThrough = sep < 0 ? [] : args[(sep + 1)..];
+
 var verbs = root.Subcommands.Select(c => c.Name).ToList();
 // `watch`/`w` is a leading modifier (→ --watch on the target verb), then resolve
 // any unambiguous verb prefix.
-var rewritten = PrefixResolver.Resolve(PrefixResolver.ExpandWatch(args), verbs);
+var rewritten = PrefixResolver.Resolve(PrefixResolver.ExpandWatch(head), verbs);
 
 try
 {

@@ -6,6 +6,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- `ConfigWriter` no longer overwrites an existing, non-empty `.rig.json` when an
+  edit can't be spliced in place (e.g. a non-object parent) — it refuses and
+  reports, instead of clobbering comments and other keys. (`rig setup` surfaces it.)
+- An empty / whitespace-only / malformed `.rig.json` (or `~/.rig.json`) now
+  degrades to defaults instead of crashing every command with a stack trace.
+- Args after `--` are no longer mis-bound to a verb's optional positional:
+  `rig run -- migrate` forwards `migrate` to the app instead of treating it as the
+  project name. The `watch` modifier (`rig w run -- x`) is fixed by the same change.
+- Custom-command (shell form) passthrough args are shell-quoted, so values
+  containing spaces, quotes, `;`, `$`, or backticks stay literal (POSIX).
+- `.env` double-quoted values keep an escaped `\"` instead of truncating at it.
+- Nested-key writes into a single-line object (e.g. the `init` template's
+  `"coverage": { … }`) insert inline instead of leaving a stray newline; a leading
+  UTF-8 BOM is tolerated.
+
 ### Added
 - `exclude` config — glob patterns (matched on a project's name or relative path)
   for projects rig should ignore, keeping demos/spikes/benchmarks out of the

@@ -10,6 +10,10 @@ internal static class Menu
 {
     public static int Run(RootCommand root)
     {
+        // Menu-driven invocations build their own arg lists — never inherit any
+        // post-`--` tokens captured for the original bare-`rig` invocation.
+        Cli.PassThrough = [];
+
         // No TTY (piped / CI) — a prompt would throw; show help instead.
         if (!AnsiConsole.Profile.Capabilities.Interactive)
             return root.Parse(["--help"]).Invoke();
