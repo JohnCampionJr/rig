@@ -1,0 +1,15 @@
+# Build output
+bin/
+obj/
+artifacts/
+
+# rig's own coverage output
+**/obj/rig/
+
+# IDE / editor
+.vs/
+.idea/
+*.user
+
+# NuGet
+*.nupkg

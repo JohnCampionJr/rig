@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    rig — a general-purpose .NET dev launcher, packaged as a dotnet tool.
+
+    Developed in-tree for now, but kept STRICTLY independent of any host repo:
+    no host-repo-specific strings (project names, target frameworks, build
+    scripts) belong in this tree — all of that lives in a consumer's .rig.json.
+    The folder is self-contained so a future `git filter-repo` on it extracts
+    cleanly to its own repo + nuget.org CI. See docs/rig.md.
+
+    Targets net8.0 (+ RollForward) so the published tool installs and runs on the
+    .NET 8/9/10 runtime. The tool shells out to `dotnet`, and MetadataLoadContext
+    only *reads* metadata, so an older host can inspect a newer test DLL.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Rig</RootNamespace>
+    <AssemblyName>rig</AssemblyName>
+
+    <!-- dotnet-tool packaging metadata. Dormant in-tree (we invoke via the
+         shell shim / dotnet run); becomes live at the nuget.org publish. -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>rig</ToolCommandName>
+    <PackageId>rig</PackageId>
+    <Version>0.1.0</Version>
+    <Description>A general-purpose .NET dev launcher: run/build/test/coverage/kill, convention-first with optional per-repo .rig.json.</Description>
+    <Authors>John Campion Jr</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>dotnet-tool;cli;dev;launcher;test;coverage</PackageTags>
+    <RepositoryUrl>https://github.com/JohnCampionJr/rig</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/JohnCampionJr/rig</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- README sits at the repo root (one level above src/Rig once extracted). -->
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <!-- Tool is an Exe with top-level statements (no public surface), so the test
+       project reaches helpers via InternalsVisibleTo. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Rig.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Rendering + interactive prompts. System.CommandLine's own .Rendering
+         package was discontinued in the redesign, so Spectre is THE renderer. -->
+    <PackageReference Include="Spectre.Console" Version="0.55.2" />
+    <!-- Parsing / dispatch / completion (dotnet-suggest). GA, no prerelease. -->
+    <PackageReference Include="System.CommandLine" Version="2.0.8" />
+    <!-- Reflection-only metadata reads for the test-class picker. -->
+    <PackageReference Include="System.Reflection.MetadataLoadContext" Version="10.0.8" />
+    <!-- In-process coverage HTML rendering (no external tool install). Apache-2.0
+         free engine; Pro features unlock via the REPORTGENERATOR_LICENSE env var. -->
+    <PackageReference Include="ReportGenerator.Core" Version="5.5.10" />
+  </ItemGroup>
+
+</Project>

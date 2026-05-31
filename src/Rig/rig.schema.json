@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/JohnCampionJr/rig/main/rig.schema.json",
+  "title": "rig configuration",
+  "description": "Per-repo configuration for the rig .NET dev launcher (.rig.json). Everything is optional; rig is convention-first and falls back to discovery.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "solution": {
+      "type": "string",
+      "description": "Path to the solution (.slnx/.sln) to use, overriding auto-discovery."
+    },
+    "defaultProject": {
+      "type": "string",
+      "description": "Project run by `rig run` with no argument; also the default kill-match source."
+    },
+    "test": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "project": {
+          "type": "string",
+          "description": "Test project path/glob, overriding auto-detection when ambiguous."
+        },
+        "envPresets": {
+          "type": "object",
+          "description": "Named env bundles applied by a matching flag (e.g. `rig test --log`).",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "settings": { "type": "string", "description": "Coverage runsettings path." },
+        "collector": {
+          "type": "string",
+          "enum": ["auto", "mtp", "xplat"],
+          "description": "Coverage collection mechanism; 'auto' detects the test runner."
+        },
+        "license": {
+          "type": "string",
+          "description": "ReportGenerator Pro key, forwarded to the REPORTGENERATOR_LICENSE env var."
+        }
+      }
+    },
+    "kill": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "match": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Process name/substring patterns to terminate."
+        }
+      }
+    },
+    "rebuild": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "skip": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Paths/globs to skip when nuking bin/obj."
+        }
+      }
+    },
+    "publish": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rid": { "type": "string" },
+        "selfContained": { "type": "boolean" },
+        "singleFile": { "type": "boolean" },
+        "output": { "type": "string", "description": "Output dir; {rid} is substituted." }
+      }
+    },
+    "env": {
+      "type": "object",
+      "description": "Environment variables applied to every spawned command.",
+      "additionalProperties": { "type": "string" }
+    },
+    "commands": {
+      "type": "object",
+      "description": "Custom verbs. Each value is a shell string, an argv array, or an object.",
+      "additionalProperties": { "$ref": "#/$defs/command" }
+    },
+    "aliases": {
+      "type": "object",
+      "description": "Verb name → curated short alias, overriding the built-in default (e.g. { \"coverage\": \"c\" }).",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "commandSpec": {
+      "oneOf": [
+        { "type": "string", "description": "Shell command string." },
+        { "type": "array", "items": { "type": "string" }, "description": "Argv (bypasses the shell)." }
+      ]
+    },
+    "command": {
+      "oneOf": [
+        { "$ref": "#/$defs/commandSpec" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "description": { "type": "string" },
+            "command": { "$ref": "#/$defs/commandSpec" },
+            "os": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "macos": { "$ref": "#/$defs/commandSpec" },
+                "windows": { "$ref": "#/$defs/commandSpec" },
+                "linux": { "$ref": "#/$defs/commandSpec" }
+              }
+            },
+            "env": { "type": "object", "additionalProperties": { "type": "string" } },
+            "cwd": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}
