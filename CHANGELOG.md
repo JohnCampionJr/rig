@@ -11,6 +11,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   below the threshold — useful in CI and as a local pre-push gate.
 - `rig info` now flags unknown/typo'd top-level `.rig.json` keys (with a "did you
   mean …?" suggestion); System.Text.Json otherwise ignores them silently.
+- `rig init` scaffolds a ready-to-fill `coverage.license` field (blank = the free
+  engine), since the ReportGenerator Pro key is the one setting that isn't
+  auto-discoverable.
 
 ### Changed
 - Completion no longer suggests the help-option noise aliases (`-?`, `-h`, `/?`,

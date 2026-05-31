@@ -26,7 +26,7 @@ internal static class InitVerb
           // rig configuration — all fields optional; rig is convention-first.
           // Solution, test project, coverage runsettings, and rebuild targets are
           // auto-discovered. Docs: https://github.com/JohnCampionJr/rig
-          "$schema": "https://raw.githubusercontent.com/JohnCampionJr/rig/main/rig.schema.json"
+          "$schema": "https://raw.githubusercontent.com/JohnCampionJr/rig/main/rig.schema.json",
 
           // Default project for `rig run` when several are runnable (or use `rig default`):
           // "defaultProject": "MyApp",
@@ -40,9 +40,10 @@ internal static class InitVerb
           // Override a verb's short alias (built-ins have sensible defaults):
           // "aliases": { "coverage": "cov" },
 
-          // ReportGenerator Pro license (optional). Since this file is committed,
-          // prefer the REPORTGENERATOR_LICENSE env var / .env for a real key:
-          // "coverage": { "license": "" }
+          // ReportGenerator Pro license. Blank = the free engine. A real key works
+          // here, but since this file is committed, prefer the REPORTGENERATOR_LICENSE
+          // env var / .env for secrets.
+          "coverage": { "license": "" }
         }
 
         """;
