@@ -94,4 +94,4 @@ dotnet test Rig.slnx     # or: dotnet test tests/Rig.Tests/Rig.Tests.csproj
 ```
 
 See [docs/DESIGN.md](docs/DESIGN.md) for architecture and the rationale behind the
-key decisions.
+key decisions, and [CHANGELOG.md](CHANGELOG.md) for release history.
