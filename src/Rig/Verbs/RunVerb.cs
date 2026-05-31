@@ -44,7 +44,7 @@ internal static class RunVerb
         string? framework = null, string? launchProfile = null)
     {
         ProjectDiscovery.WarnMultipleSolutions(session.Root, session.Config.Solution);
-        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
+        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
         var resolution = Resolve(projects, query, session.Config.DefaultProject);
 
         if (resolution.Error is not null)

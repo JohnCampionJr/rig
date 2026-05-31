@@ -11,7 +11,7 @@ internal sealed record Capabilities(bool HasSolution, int RunnableProjects, bool
     {
         try
         {
-            var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
+            var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
             var hasSolution = ProjectDiscovery.FindSolution(session.Root, session.Config.Solution) is not null;
             var runnable = projects.Count(p => p.IsRunnable);
             var hasTest = TestVerb.ResolveTestProject(session, projects) is not null;

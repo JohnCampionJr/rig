@@ -35,7 +35,7 @@ internal static class TestVerb
     public static int Execute(RigSession session, string? nameOrFilter, bool log, string? explicitFilter, string[] forwarded, bool watch = false, string? framework = null)
     {
         ProjectDiscovery.WarnMultipleSolutions(session.Root, session.Config.Solution);
-        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
+        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
         var testProject = ResolveTestProject(session, projects);
         if (testProject is null)
         {

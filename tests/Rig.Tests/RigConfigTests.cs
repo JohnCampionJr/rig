@@ -52,6 +52,18 @@ public sealed class RigConfigTests
     }
 
     [TestMethod]
+    public void Merge_unions_exclude_lists_and_repo_quiet_wins()
+    {
+        var global = RigConfig.Parse("""{ "exclude": ["*Bench"], "quiet": true }""");
+        var repo = RigConfig.Parse("""{ "exclude": ["*.Demo", "*Bench"] }""");
+
+        var merged = RigConfig.Merge(global, repo);
+
+        merged.Exclude.Should().BeEquivalentTo("*Bench", "*.Demo"); // union, de-duped
+        merged.Quiet.Should().BeTrue();                            // inherited from global (repo unset)
+    }
+
+    [TestMethod]
     public void Merge_blank_repo_license_does_not_shadow_the_global_one()
     {
         // The repo's scaffolded `coverage.license: ""` must fall through to the

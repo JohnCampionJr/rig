@@ -13,8 +13,20 @@ internal static class Cli
         Recursive = true,
     };
 
-    public static RigSession Session(ParseResult parse) =>
-        RigSession.Load(Directory.GetCurrentDirectory(), useDotEnv: !parse.GetValue(NoEnv));
+    public static readonly Option<bool> Quiet = new("--quiet", "-q")
+    {
+        Description = "Suppress the → command echo",
+        Recursive = true,
+    };
+
+    public static RigSession Session(ParseResult parse)
+    {
+        var session = RigSession.Load(Directory.GetCurrentDirectory(), useDotEnv: !parse.GetValue(NoEnv));
+        // Set once, here: every verb's action funnels through Session before it
+        // echoes a command. The flag wins; the config pref is the default.
+        Ui.Quiet = parse.GetValue(Quiet) || session.Config.Quiet == true;
+        return session;
+    }
 
     /// <summary>Tokens the parser didn't consume (post-<c>--</c> args and
     /// unrecognized flags) — forwarded verbatim to the spawned tool.</summary>

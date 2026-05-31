@@ -101,7 +101,7 @@ internal static class CoverageVerb
     {
         (full, open, min) = ResolveOptions(full, open, min, session.Config.Coverage);
         ProjectDiscovery.WarnMultipleSolutions(session.Root, session.Config.Solution);
-        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
+        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
         var testProject = TestVerb.ResolveTestProject(session, projects);
         if (testProject is null)
         {

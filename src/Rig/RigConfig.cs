@@ -20,6 +20,14 @@ internal sealed class RigConfig
     public Dictionary<string, string>? Env { get; set; }
     public Dictionary<string, CommandDef>? Commands { get; set; }
 
+    /// <summary>Glob patterns (matched on project name or relative path) for
+    /// projects rig should ignore — keeps demos/spikes/benchmarks out of the
+    /// run/default/publish/kill pickers.</summary>
+    public List<string>? Exclude { get; set; }
+
+    /// <summary>Suppress the <c>→ dotnet …</c> command echo.</summary>
+    public bool? Quiet { get; set; }
+
     /// <summary>Verb name → curated short alias, overriding the built-in default
     /// and naming custom verbs' aliases (e.g. <c>"coverage": "c"</c>).</summary>
     public Dictionary<string, string>? Aliases { get; set; }
@@ -59,7 +67,17 @@ internal sealed class RigConfig
         Env = MergeDict(baseCfg.Env, overlay.Env),
         Commands = MergeDict(baseCfg.Commands, overlay.Commands),
         Aliases = MergeDict(baseCfg.Aliases, overlay.Aliases),
+        Exclude = MergeList(baseCfg.Exclude, overlay.Exclude),
+        Quiet = overlay.Quiet ?? baseCfg.Quiet,
     };
+
+    // Exclusions accumulate: a personal ~/.rig.json "hide" list adds to the repo's.
+    private static List<string>? MergeList(List<string>? baseList, List<string>? overlay)
+    {
+        if (baseList is null) return overlay;
+        if (overlay is null) return baseList;
+        return baseList.Concat(overlay).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
 
     private static string? Coalesce(string? overlay, string? baseValue) =>
         string.IsNullOrWhiteSpace(overlay) ? baseValue : overlay;
@@ -113,7 +131,7 @@ internal sealed class RigConfig
     }
 
     private static readonly string[] KnownKeys =
-        ["$schema", "solution", "defaultProject", "test", "coverage", "kill", "rebuild", "publish", "env", "commands", "aliases"];
+        ["$schema", "solution", "defaultProject", "test", "coverage", "kill", "rebuild", "publish", "env", "commands", "aliases", "exclude", "quiet"];
 
     /// <summary>
     /// Top-level keys in the JSON that rig doesn't recognize (typos). System.Text.Json

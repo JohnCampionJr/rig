@@ -37,7 +37,7 @@ internal static class PublishVerb
     public static int Execute(RigSession session, string? query)
     {
         ProjectDiscovery.WarnMultipleSolutions(session.Root, session.Config.Solution);
-        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
+        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
         var resolution = RunVerb.Resolve(projects, query, session.Config.DefaultProject);
         if (resolution.Error is not null) { Ui.Error(resolution.Error); return 1; }
         if (resolution.Selected is null)

@@ -13,7 +13,7 @@ internal static class DefaultVerb
 {
     public static int Execute(RigSession session, string? query)
     {
-        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
+        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
         var runnable = projects.Where(p => p.IsRunnable).ToList();
 
         if (query is null)

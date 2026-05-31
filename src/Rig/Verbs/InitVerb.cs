@@ -40,6 +40,9 @@ internal static class InitVerb
           // Override a verb's short alias (built-ins have sensible defaults):
           // "aliases": { "coverage": "cov" },
 
+          // Hide projects from the run/default/publish pickers (name or path globs):
+          // "exclude": ["*Bench", "*.Demo", "*Spike"],
+
           // ReportGenerator Pro license. Blank = the free engine. A real key works
           // here, but since this file is committed, prefer the REPORTGENERATOR_LICENSE
           // env var / .env for secrets.

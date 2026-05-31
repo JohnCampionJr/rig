@@ -55,7 +55,7 @@ internal static class SetupVerb
         // Default project — only meaningful per-repo, and only when ambiguous.
         if (!isGlobal)
         {
-            var runnable = ProjectDiscovery.Discover(session.Root, session.Config.Solution)
+            var runnable = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude)
                 .Where(p => p.IsRunnable).Select(p => p.Name).ToList();
             if (runnable.Count > 1)
             {
@@ -121,7 +121,7 @@ internal static class SetupVerb
 
     private static void ShowDiscovered(RigSession session)
     {
-        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
+        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
         var runnable = projects.Where(p => p.IsRunnable).Select(p => p.Name).ToList();
         var testProject = TestVerb.ResolveTestProject(session, projects);
 

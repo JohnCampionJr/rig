@@ -59,6 +59,39 @@ public sealed class ProjectDiscoveryTests
     }
 
     [TestMethod]
+    public void Exclude_globs_drop_matching_projects_by_name_or_path()
+    {
+        using var t = new TempDir();
+        t.Write("App/App.csproj", ExeCsproj());
+        t.Write("Bench/App.Bench.csproj", ExeCsproj());
+        t.Write("samples/Demo/Demo.csproj", ExeCsproj());
+        t.Write("App.slnx", """
+            <Solution>
+              <Project Path="App/App.csproj" />
+              <Project Path="Bench/App.Bench.csproj" />
+              <Project Path="samples/Demo/Demo.csproj" />
+            </Solution>
+            """);
+
+        var kept = ProjectDiscovery.Discover(t.Path, configuredSolution: null,
+            exclude: ["*.Bench", "samples/*"]);
+
+        kept.Select(p => p.Name).Should().BeEquivalentTo("App"); // bench (name) + demo (path) dropped
+    }
+
+    [TestMethod]
+    public void IsExcluded_matches_on_name_and_forward_slashed_path()
+    {
+        var p = new ProjectInfo("Acme.Spike", "spikes/Acme.Spike/Acme.Spike.csproj",
+            "/r/spikes/Acme.Spike/Acme.Spike.csproj", "Exe", "net8.0", IsTest: false);
+
+        ProjectDiscovery.IsExcluded(p, ["*Spike"]).Should().BeTrue();   // by name
+        ProjectDiscovery.IsExcluded(p, ["spikes/*"]).Should().BeTrue(); // by path
+        ProjectDiscovery.IsExcluded(p, ["*.Demo"]).Should().BeFalse();
+        ProjectDiscovery.IsExcluded(p, null).Should().BeFalse();
+    }
+
+    [TestMethod]
     public void Parses_classic_sln_project_lines()
     {
         using var t = new TempDir();

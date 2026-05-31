@@ -120,7 +120,7 @@ internal sealed class KillCommand : Command
         SetAction(pr =>
         {
             var s = Cli.Session(pr);
-            var projects = ProjectDiscovery.Discover(s.Root, s.Config.Solution);
+            var projects = ProjectDiscovery.Discover(s.Root, s.Config.Solution, s.Config.Exclude);
             return KillVerb.Execute(s, projects);
         });
     }

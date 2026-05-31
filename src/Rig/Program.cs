@@ -28,6 +28,7 @@ static RootCommand BuildRoot()
 {
     var root = new RootCommand("rig — a general-purpose .NET dev launcher");
     root.Options.Add(Cli.NoEnv);
+    root.Options.Add(Cli.Quiet);
 
     // System.CommandLine wires `--version` but not a short `-v` — add it.
     foreach (var opt in root.Options)

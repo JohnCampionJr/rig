@@ -57,7 +57,9 @@ targets. What's left is only what can't be inferred:
   "defaultProject": "MyApp",                                    // when several are runnable
   "test": { "envPresets": { "log": { "MYAPP_LOG": "1" } } },    // `rig test --log`
   "commands": { "deploy": "./deploy.sh" },                      // custom verbs (npm-scripts style)
-  "aliases": { "coverage": "cov" }                              // override a verb's short alias
+  "aliases": { "coverage": "cov" },                             // override a verb's short alias
+  "exclude": ["*Bench", "*.Demo", "*Spike"],                    // hide projects from the pickers
+  "quiet": false                                                // suppress the `→ command` echo
 }
 ```
 

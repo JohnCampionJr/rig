@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- `exclude` config — glob patterns (matched on a project's name or relative path)
+  for projects rig should ignore, keeping demos/spikes/benchmarks out of the
+  run/default/publish/kill pickers and the menu. Globs support `*` and `?`; the
+  repo's and `~/.rig.json`'s lists union.
+- `--quiet`/`-q` flag and `quiet` config — suppress the `→ command` echo
+  (results, warnings, and errors still print). The flag overrides the config.
 - `rig setup` — an interactive walkthrough that shows what rig auto-detects, then
   lets you set the few things it can't infer (default project, ReportGenerator Pro
   license, coverage prefs) into either the repo's `.rig.json` or your user-wide

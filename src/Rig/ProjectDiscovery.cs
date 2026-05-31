@@ -34,7 +34,7 @@ internal static class ProjectDiscovery
 {
     private const StringComparison OIC = StringComparison.OrdinalIgnoreCase;
 
-    public static IReadOnlyList<ProjectInfo> Discover(string root, string? configuredSolution)
+    public static IReadOnlyList<ProjectInfo> Discover(string root, string? configuredSolution, IReadOnlyList<string>? exclude = null)
     {
         var solution = FindSolution(root, configuredSolution);
         IEnumerable<string> csprojs = solution is not null
@@ -45,9 +45,20 @@ internal static class ProjectDiscovery
         foreach (var path in csprojs)
         {
             if (!File.Exists(path)) continue;
-            projects.Add(LoadProject(path, root));
+            var project = LoadProject(path, root);
+            if (!IsExcluded(project, exclude)) projects.Add(project);
         }
         return projects.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    /// <summary>A project matches an <c>exclude</c> glob by its name or its
+    /// (forward-slashed) relative path — so both <c>"*Bench"</c> and
+    /// <c>"samples/*"</c> work.</summary>
+    public static bool IsExcluded(ProjectInfo project, IReadOnlyList<string>? exclude)
+    {
+        if (exclude is not { Count: > 0 }) return false;
+        var rel = project.RelPath.Replace('\\', '/');
+        return exclude.Any(pattern => Glob.IsMatch(pattern, project.Name) || Glob.IsMatch(pattern, rel));
     }
 
     private static bool _warnedMultiSolution;

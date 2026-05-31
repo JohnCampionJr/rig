@@ -13,7 +13,7 @@ internal static class Completions
         try
         {
             var s = RigSession.Load(Directory.GetCurrentDirectory());
-            return ProjectDiscovery.Discover(s.Root, s.Config.Solution)
+            return ProjectDiscovery.Discover(s.Root, s.Config.Solution, s.Config.Exclude)
                 .Where(p => p.IsRunnable)
                 .Select(p => new CompletionItem(p.ShortName))
                 .ToList();
@@ -26,7 +26,7 @@ internal static class Completions
         try
         {
             var s = RigSession.Load(Directory.GetCurrentDirectory());
-            return ProjectDiscovery.Discover(s.Root, s.Config.Solution)
+            return ProjectDiscovery.Discover(s.Root, s.Config.Solution, s.Config.Exclude)
                 .Select(p => new CompletionItem(p.ShortName))
                 .ToList();
         }
@@ -38,7 +38,7 @@ internal static class Completions
         try
         {
             var s = RigSession.Load(Directory.GetCurrentDirectory());
-            var projects = ProjectDiscovery.Discover(s.Root, s.Config.Solution);
+            var projects = ProjectDiscovery.Discover(s.Root, s.Config.Solution, s.Config.Exclude);
             var testProject = TestVerb.ResolveTestProject(s, projects);
             if (testProject is null) return [];
 

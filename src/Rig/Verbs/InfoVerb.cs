@@ -11,7 +11,7 @@ internal static class InfoVerb
     public static int Execute(RigSession session)
     {
         var ctx = RootResolver.Resolve(session.Root);
-        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
+        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
         var runnable = projects.Where(p => p.IsRunnable).Select(p => p.Name).ToList();
         var testProject = TestVerb.ResolveTestProject(session, projects);
         var solution = ProjectDiscovery.FindSolution(session.Root, session.Config.Solution);

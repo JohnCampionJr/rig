@@ -56,7 +56,7 @@ internal static class RebuildVerb
 
     public static int Execute(RigSession session, string[] forwarded, bool dryRun = false)
     {
-        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution);
+        var projects = ProjectDiscovery.Discover(session.Root, session.Config.Solution, session.Config.Exclude);
         var skip = session.Config.Rebuild?.Skip ?? [];
         var targets = TargetDirs(session.Root, projects, skip);
 

@@ -107,6 +107,15 @@
       "type": "object",
       "description": "Verb name → curated short alias, overriding the built-in default (e.g. { \"coverage\": \"c\" }).",
       "additionalProperties": { "type": "string" }
+    },
+    "exclude": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Glob patterns (matched on project name or relative path) for projects rig ignores — keeps demos/spikes/benchmarks out of the pickers."
+    },
+    "quiet": {
+      "type": "boolean",
+      "description": "Suppress the `→ command` echo (same as passing --quiet)."
     }
   },
   "$defs": {
