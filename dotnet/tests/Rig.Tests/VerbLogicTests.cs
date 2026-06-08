@@ -196,6 +196,33 @@ public sealed class VerbLogicTests
         matched.Should().BeEquivalentTo([1001, 1002]); // driver + apphost; not Other, system, or self
     }
 
+    // ---- KillVerb --port PID parsing ----
+
+    [TestMethod]
+    public void Kill_parses_lsof_pids_unique_sorted_dropping_self()
+    {
+        // `lsof -ti` emits one PID per line; ports can be shared (fork model) so dupes appear.
+        KillVerb.ParsePids("3201\n3187\n3201\n", selfPid: 999)
+            .Should().Equal(3187, 3201);
+        // Our own PID and junk tokens are dropped.
+        KillVerb.ParsePids("777 888 \n abc -1 0", selfPid: 777)
+            .Should().Equal(888);
+        KillVerb.ParsePids("", selfPid: 1).Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void Kill_parses_netstat_listening_pids_only()
+    {
+        // `netstat -ano -p tcp | findstr :3000` — LISTENING rows carry the owning PID last;
+        // ESTABLISHED rows (a client connection) must not be killed.
+        var output =
+            "  TCP    0.0.0.0:3000      0.0.0.0:0        LISTENING       4321\r\n" +
+            "  TCP    [::]:3000         [::]:0           LISTENING       4321\r\n" +
+            "  TCP    127.0.0.1:3000    127.0.0.1:54012  ESTABLISHED     8888\r\n";
+        KillVerb.ParseNetstatPids(output, selfPid: 999).Should().Equal(4321);
+        KillVerb.ParseNetstatPids(output, selfPid: 4321).Should().BeEmpty();
+    }
+
     // ---- PublishVerb ----
 
     [TestMethod]

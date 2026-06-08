@@ -143,17 +143,20 @@ internal sealed class KillCommand : Command
 {
     private readonly Argument<string?> _project =
         new("project") { Arity = ArgumentArity.ZeroOrOne, HelpName = "project", Description = "Project to kill (substring / short-name match); omit to kill all runnable projects" };
+    private readonly Option<int[]> _port =
+        new("--port") { Description = "Kill whatever is listening on this TCP port (repeatable)", AllowMultipleArgumentsPerToken = true };
 
     public KillCommand() : base("kill", "Terminate matching app/test processes (omit project = all runnable)")
     {
         Aliases.Add("k");
         _project.CompletionSources.Add(_ => Completions.RunnableProjects());
         Arguments.Add(_project);
+        Options.Add(_port);
         SetAction(pr =>
         {
             var s = Cli.Session(pr);
             var projects = ProjectDiscovery.Discover(s.Root, s.Config.Solution, s.Config.Exclude);
-            return KillVerb.Execute(s, projects, pr.GetValue(_project));
+            return KillVerb.Execute(s, projects, pr.GetValue(_project), pr.GetValue(_port));
         });
     }
 }

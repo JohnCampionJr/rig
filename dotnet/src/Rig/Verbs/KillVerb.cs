@@ -3,15 +3,22 @@ using System.Text;
 namespace Rig;
 
 /// <summary>
-/// `rig kill [project]` — terminate processes matching `kill.match` patterns; or,
-/// when a project is named, that project; or, with neither, *every* runnable
-/// project (the "stop everything I started" sweep). Pattern-based so it also
-/// catches strays (a hung test host, an IDE-launched instance, a `dotnet watch`
-/// that keeps respawning the app). Matching is against the *full command line*
-/// on both platforms — <c>pkill -f</c> on Unix, CIM <c>Win32_Process.CommandLine</c>
+/// `rig kill [project] [--port N]` — terminate processes matching `kill.match`
+/// patterns; or, when a project is named, that project; or, with neither, *every*
+/// runnable project (the "stop everything I started" sweep). Pattern-based so it
+/// also catches strays (a hung test host, an IDE-launched instance, a `dotnet
+/// watch` that keeps respawning the app). Matching is against the *full command
+/// line* on both platforms — <c>pkill -f</c> on Unix, CIM <c>Win32_Process.CommandLine</c>
 /// on Windows — so the `dotnet run`/`dotnet watch` driver (image <c>dotnet.exe</c>)
 /// is caught alongside the apphost, not just the apphost. "No match" is success.
-/// Pattern resolution (pure) is <see cref="ResolvePatterns"/>.
+/// <para>
+/// <c>--port N</c> (repeatable) instead frees whatever is *listening* on those TCP
+/// ports — <c>lsof</c> on Unix, <c>netstat</c> on Windows — killing the owning PIDs
+/// directly. A bare numeric arg (<c>rig kill 3000</c>) is treated as a port too.
+/// Port mode takes precedence over pattern mode.
+/// </para>
+/// Pattern resolution (pure) is <see cref="ResolvePatterns"/>; PID parsing (pure)
+/// is <see cref="ParsePids"/> / <see cref="ParseNetstatPids"/>.
 /// </summary>
 internal static class KillVerb
 {
@@ -49,8 +56,18 @@ internal static class KillVerb
         return exact.Count > 0 ? exact : projects.Where(p => p.Name.Contains(q, OIC)).ToList();
     }
 
-    public static int Execute(RigSession session, IReadOnlyList<ProjectInfo> projects, string? query = null)
+    public static int Execute(RigSession session, IReadOnlyList<ProjectInfo> projects,
+        string? query = null, IReadOnlyList<int>? ports = null)
     {
+        // A bare numeric arg (`rig kill 3000`) is a port, matching the Node tool.
+        var allPorts = new List<int>(ports ?? []);
+        if (query is not null && int.TryParse(query.Trim(), out var port) && port > 0)
+        {
+            allPorts.Add(port);
+            query = null;
+        }
+        if (allPorts.Count > 0) return ExecutePorts(session, allPorts);
+
         var patterns = ResolvePatterns(session.Config, projects, query);
         if (patterns.Count == 0)
         {
@@ -61,6 +78,91 @@ internal static class KillVerb
         return OperatingSystem.IsWindows()
             ? ExecuteWindows(session, patterns)
             : ExecuteUnix(session, patterns);
+    }
+
+    // ---- Port mode: free whatever is listening on the given TCP ports. ----
+
+    private static int ExecutePorts(RigSession session, IReadOnlyList<int> ports)
+    {
+        var self = Environment.ProcessId;
+        var pids = ports.SelectMany(p => ListeningPids(session.Root, p, self)).Distinct().OrderBy(p => p).ToList();
+        var portList = string.Join(", ", ports);
+        if (pids.Count == 0)
+        {
+            Ui.Info($"nothing listening on {portList}");
+            return 0;
+        }
+
+        if (Exec.DryRun)
+        {
+            Ui.Warn($"would kill {pids.Count} process(es) on {portList}: {string.Join(", ", pids)}");
+            return 0;
+        }
+
+        return OperatingSystem.IsWindows()
+            ? KillPidsWindows(session, pids)
+            : KillPidsUnix(session, pids);
+    }
+
+    // Unix: a single `kill` with every PID. "No such process" (already gone) is fine.
+    private static int KillPidsUnix(RigSession session, IReadOnlyList<int> pids)
+    {
+        var args = pids.Select(p => p.ToString()).ToArray();
+        Ui.Command("kill", args);
+        var rc = Exec.Run("kill", args, session.Root, suppressMissing: true);
+        if (rc == 0) Ui.Success($"killed {pids.Count} process(es)");
+        return rc;
+    }
+
+    // Windows: taskkill per PID, tree-killing each (a dev server may have spawned children).
+    private static int KillPidsWindows(RigSession session, IReadOnlyList<int> pids)
+    {
+        var worst = 0;
+        foreach (var pid in pids)
+        {
+            var pidArg = pid.ToString();
+            Ui.Command("taskkill", ["/F", "/T", "/PID", pidArg]);
+            var rc = Exec.Run("taskkill", ["/F", "/T", "/PID", pidArg], session.Root, suppressMissing: true);
+            if (rc is not 0 and not 128) worst = rc; // 128 = no such process (already gone)
+        }
+        if (worst == 0) Ui.Success($"killed {pids.Count} process(es)");
+        return worst;
+    }
+
+    // PIDs with a LISTEN socket on the given TCP port: lsof on Unix, netstat on Windows.
+    private static IReadOnlyList<int> ListeningPids(string cwd, int port, int selfPid)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            var (_, output) = Exec.Capture("cmd", ["/c", $"netstat -ano -p tcp | findstr :{port}"], cwd);
+            return output.Length > 0 ? ParseNetstatPids(output, selfPid) : [];
+        }
+        // lsof exits 1 with no output when nothing is listening — that's just "none".
+        var (_, o) = Exec.Capture("lsof", ["-ti", $"tcp:{port}", "-sTCP:LISTEN"], cwd);
+        return o.Length > 0 ? ParsePids(o, selfPid) : [];
+    }
+
+    /// <summary>Whitespace-separated PID tokens (e.g. <c>lsof -ti</c> output) → a unique,
+    /// ascending PID list, dropping our own PID and non-positive values. Pure.</summary>
+    public static IReadOnlyList<int> ParsePids(string output, int selfPid) =>
+        output.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => int.TryParse(s, out var n) ? n : 0)
+            .Where(n => n > 0 && n != selfPid)
+            .Distinct().OrderBy(n => n).ToList();
+
+    /// <summary>PIDs from <c>netstat -ano -p tcp</c> output: the trailing token of each
+    /// LISTENING row, minus our own PID and non-positive values. Pure.</summary>
+    public static IReadOnlyList<int> ParseNetstatPids(string output, int selfPid)
+    {
+        var pids = new List<int>();
+        foreach (var raw in output.Split('\n'))
+        {
+            var line = raw.Trim();
+            if (line.Length == 0 || !line.Contains("LISTENING", OIC)) continue;
+            var tokens = line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
+            if (int.TryParse(tokens[^1], out var pid) && pid > 0 && pid != selfPid) pids.Add(pid);
+        }
+        return pids.Distinct().OrderBy(n => n).ToList();
     }
 
     // ---- Unix: pkill -f matches the whole command line natively. ----
