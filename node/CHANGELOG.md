@@ -20,9 +20,11 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
 - **Config**: `info`, `doctor`, `init`, `setup`, `default`, `update`.
 - **Interactive menu**: project-driven, shows each item's real command, single-key
   navigation with Backspace/Esc to go back; `scripts ▸ · maintenance ▸ · config ▸`.
-- **Config file**: single `rig.config.json` with a `$schema`, JSONC-tolerant reads, and
+- **Config file**: single `.rig.json` with a `$schema`, JSONC-tolerant reads, and
   comment-preserving writes; global `~/.rig.json`; `.env` / `.env.local` loading;
-  named `envPresets` as `--<preset>` flags.
+  named `envPresets` as `--<preset>` flags. Shared with the .NET rig: shared keys live
+  at the top level, while tool-specific settings are namespaced under `dotnet` (the .NET
+  rig) and `node` (the Node rig); the Node rig ignores the `dotnet` block.
 - **CLI**: built on [gunshi](https://gunshi.dev) — verb aliases, unambiguous-prefix
   expansion, the `watch` modifier, `--dry-run`/`--quiet`/`--no-env`, auto `--help`, and
   shell completion (`rig complete zsh|bash|pwsh`).

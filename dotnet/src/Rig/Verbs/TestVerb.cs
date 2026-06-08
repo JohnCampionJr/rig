@@ -6,7 +6,7 @@ namespace Rig;
 /// `rig test [name | ~expr | =expr | --filter expr] [--log]` — runs `dotnet
 /// test` on the discovered test project. A bare name resolves against the
 /// enumerated test classes (multi-match → picker); the `~ = !~ !=` shorthands
-/// map to `FullyQualifiedName{op}{expr}`. `--log` applies the `test.envPresets`
+/// map to `FullyQualifiedName{op}{expr}`. `--log` applies the `envPresets`
 /// "log" bundle. Filter/shorthand parsing is pure (<see cref="ShorthandFilter"/>).
 /// </summary>
 internal static class TestVerb
@@ -39,7 +39,7 @@ internal static class TestVerb
         var testProject = ResolveTestProject(session, projects);
         if (testProject is null)
         {
-            Ui.Error("No test project found. Add one (IsTestProject / Microsoft.NET.Test.Sdk / *Tests), or set test.project in .rig.json.");
+            Ui.Error("No test project found. Add one (IsTestProject / Microsoft.NET.Test.Sdk / *Tests), or set dotnet.test.project in .rig.json.");
             return 1;
         }
 
@@ -52,7 +52,7 @@ internal static class TestVerb
             if (session.Config.Test?.EnvPresets is { } presets && presets.TryGetValue("log", out var preset))
                 commandEnv = preset;
             else
-                Ui.Warn("--log: no test.envPresets.log defined in .rig.json; nothing applied.");
+                Ui.Warn("--log: no envPresets.log defined in .rig.json; nothing applied.");
         }
 
         Ui.Command("dotnet", args);

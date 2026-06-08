@@ -55,7 +55,7 @@ internal static class Menu
             }
             if (pick == "config")
             {
-                if (Category(root, "Config", ["default", "info", "setup"], caps, runnable, defaultProject) is { } code) return code;
+                if (Category(root, "Config", ["default", "info", "doctor", "setup"], caps, runnable, defaultProject) is { } code) return code;
                 continue;
             }
 

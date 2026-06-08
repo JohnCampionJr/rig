@@ -25,7 +25,7 @@ const template = () => `{
 }
 `
 
-/** `rig init` — scaffold a commented rig.config.json at the repo root. */
+/** `rig init` — scaffold a commented .rig.json at the repo root. */
 export async function init(session: Session): Promise<number> {
   const target = join(session.workspace.root, CONFIG_NAME)
   if (existsSync(target)) {

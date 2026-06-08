@@ -172,7 +172,7 @@ function standaloneCommands(session: Session) {
   })
   const initCmd = define({
     name: 'init',
-    description: 'Scaffold a rig.config.json',
+    description: 'Scaffold a .rig.json',
     args: { ...globalArgs },
     run: async () => setCode(await init(session)),
   })

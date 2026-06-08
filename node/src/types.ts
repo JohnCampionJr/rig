@@ -55,7 +55,7 @@ export type CommandDef =
       description?: string
     }
 
-/** rig.config.json shape — every field optional. */
+/** .rig.json shape — every field optional. */
 export interface RigConfig {
   /** Default package for package-scoped verbs when several are runnable. */
   defaultProject?: string
@@ -92,6 +92,6 @@ export interface Session {
   flags: Flags
   /** Path of the loaded global config (~/.rig.json), if any (for `info`). */
   globalConfigPath: string | null
-  /** Path of the repo rig.config.json, if it exists (for `info`). */
+  /** Path of the repo .rig.json, if it exists (for `info`). */
   repoConfigPath: string | null
 }

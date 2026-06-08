@@ -6,6 +6,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- Root resolution no longer climbs past a `.git` ancestor: a stray solution or
+  config *outside* the repository (e.g. a `*.sln` up in the home directory) can no
+  longer hijack the repo root when the repo's own solution sits in a subdirectory.
+
+### Added
+- `rig doctor` — environment health check: the .NET SDK (and whether it satisfies
+  a `global.json` pin), restore state, the solution/project layout, and the test
+  project. Exits non-zero only on an error-level finding, so it works as a CI /
+  pre-push gate. Mirrors the Node `rig doctor`.
+
+### Changed
+- **Config layout unified with the Node `rig`.** Shared keys stay at the top level;
+  .NET-only settings move under a `dotnet` namespace (`dotnet.solution`,
+  `dotnet.test.project`, `dotnet.coverage.{settings,collector,license}`,
+  `dotnet.rebuild`, `dotnet.publish`), and env presets move to a top-level
+  `envPresets`. Fully additive — the previous flat layout still loads, with the
+  namespaced value winning when both are present. `rig init` / `rig setup` now write
+  the new shape; a `node` namespace is accepted and ignored.
+
 ### Added
 - `rig update [--check]` — updates the rig tool itself to the latest published
   version (checks nuget.org for what's newer than the running build). `--check`

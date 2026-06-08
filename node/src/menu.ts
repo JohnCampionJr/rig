@@ -196,7 +196,7 @@ async function configMenu(session: Session): Promise<number | typeof BACK> {
     { value: 'doctor', label: 'doctor', hint: 'check the environment' },
     { value: 'setup', label: 'setup', hint: 'set preferences' },
     { value: 'default', label: 'default', hint: 'set the default package' },
-    { value: 'init', label: 'init', hint: 'scaffold rig.config.json' },
+    { value: 'init', label: 'init', hint: 'scaffold .rig.json' },
     { value: 'update', label: 'update', hint: 'update rig itself' },
     { value: BACK, label: '← back' },
   ])

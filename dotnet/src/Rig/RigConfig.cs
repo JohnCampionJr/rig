@@ -18,6 +18,19 @@ internal sealed class RigConfig
     public RebuildConfig? Rebuild { get; set; }
     public PublishConfig? Publish { get; set; }
     public Dictionary<string, string>? Env { get; set; }
+
+    /// <summary>Named env bundles applied by a matching flag (e.g. <c>rig test
+    /// --log</c>). The shared, cross-tool location; <see cref="Normalize"/> folds
+    /// it onto <see cref="TestConfig.EnvPresets"/> (the legacy <c>test.envPresets</c>
+    /// spot) so consumers read a single place.</summary>
+    public Dictionary<string, Dictionary<string, string>>? EnvPresets { get; set; }
+
+    /// <summary>The <c>dotnet</c> namespace for .NET-specific settings in a config
+    /// shared with the Node <c>rig</c>. Transient: <see cref="Normalize"/> folds it
+    /// onto the canonical top-level fields right after parse, so it is always null by
+    /// the time a verb reads the config.</summary>
+    public DotnetConfig? Dotnet { get; set; }
+
     public Dictionary<string, CommandDef>? Commands { get; set; }
 
     /// <summary>Glob patterns (matched on project name or relative path) for
@@ -50,7 +63,54 @@ internal sealed class RigConfig
     public static RigConfig Parse(string json) =>
         string.IsNullOrWhiteSpace(json)
             ? new RigConfig() // empty / whitespace-only file (e.g. `touch .rig.json`)
-            : JsonSerializer.Deserialize<RigConfig>(json, Options) ?? new RigConfig();
+            : (JsonSerializer.Deserialize<RigConfig>(json, Options) ?? new RigConfig()).Normalize();
+
+    /// <summary>
+    /// Fold the new, cross-tool config shape onto the legacy fields every verb
+    /// reads: the <c>dotnet</c> namespace collapses onto the top-level
+    /// <c>solution</c>/<c>test</c>/<c>coverage</c>/<c>rebuild</c>/<c>publish</c>
+    /// fields, and the top-level <c>envPresets</c> collapses onto
+    /// <c>test.envPresets</c>. The namespaced value wins when both are present, so a
+    /// repo can migrate to <c>dotnet.*</c> without the tool changing behavior, and an
+    /// older <c>.rig.json</c> keeps working unchanged. Idempotent; clears the
+    /// transient inputs so consumers only ever see the canonical fields.
+    /// </summary>
+    private RigConfig Normalize()
+    {
+        // Shared `envPresets` wins over the legacy `test.envPresets`.
+        if (EnvPresets is not null)
+        {
+            Test ??= new TestConfig();
+            Test.EnvPresets = MergeDict(Test.EnvPresets, EnvPresets);
+            EnvPresets = null;
+        }
+
+        if (Dotnet is { } d)
+        {
+            Solution = Coalesce(d.Solution, Solution);
+            DefaultProject = Coalesce(d.DefaultProject, DefaultProject);
+
+            if (d.Test is not null)
+            {
+                Test ??= new TestConfig();
+                Test.Project = Coalesce(d.Test.Project, Test.Project);
+                Test.EnvPresets = MergeDict(Test.EnvPresets, d.Test.EnvPresets);
+            }
+
+            if (d.Coverage is not null)
+            {
+                Coverage ??= new CoverageConfig();
+                Coverage.Settings = Coalesce(d.Coverage.Settings, Coverage.Settings);
+                Coverage.Collector = Coalesce(d.Coverage.Collector, Coverage.Collector);
+                Coverage.License = Coalesce(d.Coverage.License, Coverage.License);
+            }
+
+            Rebuild = d.Rebuild ?? Rebuild;
+            Publish = d.Publish ?? Publish;
+            Dotnet = null;
+        }
+        return this;
+    }
 
     /// <summary>
     /// Layer <paramref name="overlay"/> (the repo's <c>.rig.json</c>) on top of
@@ -136,7 +196,7 @@ internal sealed class RigConfig
     }
 
     private static readonly string[] KnownKeys =
-        ["$schema", "solution", "defaultProject", "test", "coverage", "kill", "rebuild", "publish", "env", "commands", "aliases", "exclude", "quiet"];
+        ["$schema", "solution", "defaultProject", "test", "coverage", "kill", "rebuild", "publish", "env", "envPresets", "commands", "aliases", "exclude", "quiet", "dotnet", "node"];
 
     /// <summary>
     /// Top-level keys in the JSON that rig doesn't recognize (typos). System.Text.Json
@@ -205,6 +265,30 @@ internal sealed class CoverageConfig
     public bool? Open { get; set; }          // default: open the report (== always passing --open)
     public bool? Full { get; set; }          // default: full multi-file report (== --full)
     public double? Min { get; set; }         // default line-coverage gate (== --min); CLI --min overrides
+}
+
+/// <summary>
+/// The <c>dotnet</c> namespace: .NET-only settings, kept apart from the shared,
+/// cross-tool keys in a config the Node <c>rig</c> may also read. Folded onto the
+/// canonical top-level fields by <see cref="RigConfig.Normalize"/>.
+/// </summary>
+internal sealed class DotnetConfig
+{
+    public string? Solution { get; set; }
+    public string? DefaultProject { get; set; }
+    public TestConfig? Test { get; set; }
+    public DotnetCoverageConfig? Coverage { get; set; }
+    public RebuildConfig? Rebuild { get; set; }
+    public PublishConfig? Publish { get; set; }
+}
+
+/// <summary>The .NET-only coverage knobs (the <c>open</c>/<c>full</c>/<c>min</c>
+/// gate lives in the shared top-level <c>coverage</c> block).</summary>
+internal sealed class DotnetCoverageConfig
+{
+    public string? Settings { get; set; }
+    public string? Collector { get; set; } // auto | mtp | xplat
+    public string? License { get; set; }    // ReportGenerator Pro key → REPORTGENERATOR_LICENSE
 }
 
 internal sealed class KillConfig

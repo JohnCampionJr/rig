@@ -135,6 +135,64 @@ public sealed class RigConfigTests
     }
 
     [TestMethod]
+    public void Folds_the_dotnet_namespace_and_top_level_envPresets_onto_canonical_fields()
+    {
+        var cfg = RigConfig.Parse("""
+            {
+              "defaultProject": "App.Desktop",
+              "envPresets": { "log": { "APP_LOG": "1" } },
+              "coverage": { "open": true, "min": 80 },
+              "dotnet": {
+                "solution": "App.slnx",
+                "test": { "project": "tests/App.Tests/App.Tests.csproj" },
+                "coverage": { "settings": "cov.runsettings", "collector": "auto", "license": "KEY" },
+                "rebuild": { "skip": ["vendor"] },
+                "publish": { "rid": "osx-arm64", "selfContained": true }
+              }
+            }
+            """);
+
+        // dotnet.* folds onto the canonical top-level fields verbs read.
+        cfg.Solution.Should().Be("App.slnx");
+        cfg.Test!.Project.Should().Be("tests/App.Tests/App.Tests.csproj");
+        cfg.Coverage!.Settings.Should().Be("cov.runsettings");
+        cfg.Coverage.Collector.Should().Be("auto");
+        cfg.Coverage.License.Should().Be("KEY");
+        // shared coverage knobs stay top-level.
+        cfg.Coverage.Open.Should().BeTrue();
+        cfg.Coverage.Min.Should().Be(80);
+        cfg.Rebuild!.Skip.Should().BeEquivalentTo("vendor");
+        cfg.Publish!.Rid.Should().Be("osx-arm64");
+        cfg.Publish.SelfContained.Should().BeTrue();
+        // top-level envPresets folds onto test.envPresets.
+        cfg.Test.EnvPresets!["log"]["APP_LOG"].Should().Be("1");
+        // the transient namespace is consumed.
+        cfg.Dotnet.Should().BeNull();
+    }
+
+    [TestMethod]
+    public void Dotnet_namespace_wins_over_legacy_top_level_keys()
+    {
+        var cfg = RigConfig.Parse("""
+            {
+              "solution": "Legacy.slnx",
+              "dotnet": { "solution": "New.slnx" }
+            }
+            """);
+
+        cfg.Solution.Should().Be("New.slnx");
+    }
+
+    [TestMethod]
+    public void A_node_namespace_is_ignored_not_flagged_as_unknown()
+    {
+        var json = """{ "node": { "anything": true }, "defaultProject": "App" }""";
+
+        RigConfig.UnknownKeys(json).Should().BeEmpty();
+        RigConfig.Parse(json).DefaultProject.Should().Be("App");
+    }
+
+    [TestMethod]
     public void Command_string_form_is_a_shell_command()
     {
         var cfg = RigConfig.Parse("""{ "commands": { "deploy": "./deploy.sh --prod" } }""");

@@ -28,11 +28,14 @@ internal static class InitVerb
           // auto-discovered. Docs: https://github.com/JohnCampionJr/rig
           "$schema": "https://raw.githubusercontent.com/JohnCampionJr/rig/main/rig.schema.json",
 
+          // Shared keys (the same in the .NET and Node rig) live at the top level;
+          // .NET-only settings go under "dotnet". Both are optional.
+
           // Default project for `rig run` when several are runnable (or use `rig default`):
           // "defaultProject": "MyApp",
 
           // Named env presets applied by a flag, e.g. `rig test --log`:
-          // "test": { "envPresets": { "log": { "MYAPP_LOG": "1" } } },
+          // "envPresets": { "log": { "MYAPP_LOG": "1" } },
 
           // Custom verbs (npm-scripts style). String = shell; array = argv; object = per-OS:
           // "commands": { "deploy": "./deploy.sh" },
@@ -43,10 +46,17 @@ internal static class InitVerb
           // Hide projects from the run/default/publish pickers (name or path globs):
           // "exclude": ["*Bench", "*.Demo", "*Spike"],
 
-          // ReportGenerator Pro license. Blank = the free engine. A real key works
-          // here, but since this file is committed, prefer the REPORTGENERATOR_LICENSE
-          // env var / .env for secrets.
-          "coverage": { "license": "" }
+          // .NET-specific settings:
+          "dotnet": {
+            // Pin the solution / test project when auto-discovery is ambiguous:
+            // "solution": "MyApp.slnx",
+            // "test": { "project": "tests/MyApp.Tests/MyApp.Tests.csproj" },
+
+            // ReportGenerator Pro license. Blank = the free engine. A real key works
+            // here, but since this file is committed, prefer the REPORTGENERATOR_LICENSE
+            // env var / .env for secrets.
+            "coverage": { "license": "" }
+          }
         }
 
         """;

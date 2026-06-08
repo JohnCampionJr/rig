@@ -29,7 +29,7 @@ muscle-memory front-end**:
   each row shows the *real* command it will run, so you learn them over time.
 - **Run from anywhere.** Discovery anchors at the workspace root; you never `cd`.
 - **Convention over config.** A vanilla repo needs **zero** configuration; an optional
-  `rig.config.json` supplies only what can't be inferred.
+  `.rig.json` supplies only what can't be inferred.
 
 ## Verbs
 
@@ -55,7 +55,7 @@ trailing token picks the package (`rig dev api`, fuzzy). Args after `--` are for
 | `default [project]` | `def` | Show or set the default package |
 | `info` | `i` | Show what rig discovered (pm, packages, scripts) |
 | `doctor` | — | Flag environment problems (node version, pm, install state) |
-| `init` | — | Scaffold a commented `rig.config.json` |
+| `init` | — | Scaffold a commented `.rig.json` |
 | `setup` | — | Interactive walkthrough to set preferences |
 | `update` | — | Update rig itself (`--check` to only report) |
 | `complete <shell>` | — | Print a shell-completion script (zsh / bash / pwsh) |
@@ -79,11 +79,17 @@ rig build --all                 # core → ui → app (topological)
 rig test --all --filter web     # only packages matching "web"
 ```
 
-## Configuration (`rig.config.json`, all optional)
+## Configuration (`.rig.json`, all optional)
 
 `rig init` scaffolds it; everything is inferred otherwise. A `$schema` reference gives
 you autocomplete and validation in editors. Machine writes (`rig default`, `rig setup`)
 splice values **in place, preserving your comments**.
+
+`.rig.json` is shared with the .NET rig. Shared keys (`defaultProject`, `exclude`,
+`quiet`, `env`, `envPresets`, `commands`, `aliases`, `kill`, `coverage`) live at the top
+level; tool-specific settings live under a `dotnet` key (the .NET rig) or a `node` key
+(the Node rig). The Node rig ignores the `dotnet` block; the `node` block is reserved for
+future Node-specific settings.
 
 ```jsonc
 {
@@ -98,7 +104,7 @@ splice values **in place, preserving your comments**.
 
 A global `~/.rig.json` (override with `$RIG_GLOBAL_CONFIG`) applies to every repo; the
 repo config layers on top (repo wins per key, dictionaries union). `.env` / `.env.local`
-load automatically (ambient env wins over the file; `rig.config.json` env wins over both).
+load automatically (ambient env wins over the file; `.rig.json` env wins over both).
 
 ## Coverage
 

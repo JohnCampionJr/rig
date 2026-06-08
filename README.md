@@ -42,6 +42,7 @@ be inferred.
 | `publish [project]` | `pub` | Self-contained `dotnet publish` (`-c`/`-r`/`-o`/`--self-contained`/`--single-file`) |
 | `default [project]` | `def` | Show or set the default run project (no run) |
 | `info` | `i` | Show what rig discovered/resolved for this repo |
+| `doctor` | — | Flag environment problems (SDK vs `global.json`, restore state, layout); non-zero exit on errors |
 | `init` | — | Scaffold a commented `.rig.json` |
 | `setup` | — | Interactive walkthrough — set local/global prefs without hand-editing |
 | `update` | — | Update rig itself to the latest published version (`--check` to only report) |
@@ -60,17 +61,24 @@ Auto-discovered (so they stay out of config): the solution, the test project, th
 coverage runsettings, the coverage collector, the `kill` target, and the `rebuild`
 targets. What's left is only what can't be inferred:
 
+Shared keys (the same in the .NET and Node `rig`) live at the top level; .NET-only
+settings go under `dotnet`:
+
 ```jsonc
 {
   "$schema": "https://raw.githubusercontent.com/JohnCampionJr/rig/main/rig.schema.json",
   "defaultProject": "MyApp",                                    // when several are runnable
-  "test": { "envPresets": { "log": { "MYAPP_LOG": "1" } } },    // `rig test --log`
+  "envPresets": { "log": { "MYAPP_LOG": "1" } },                // `rig test --log`
   "commands": { "deploy": "./deploy.sh" },                      // custom verbs (npm-scripts style)
   "aliases": { "coverage": "cov" },                             // override a verb's short alias
   "exclude": ["*Bench", "*.Demo", "*Spike"],                    // hide projects from the pickers
-  "quiet": false                                                // suppress the `→ command` echo
+  "quiet": false,                                               // suppress the `→ command` echo
+  "dotnet": { "coverage": { "license": "" } }                   // .NET-only settings
 }
 ```
+
+> The previous flat layout (`solution`, `test`, `coverage.license`, `rebuild`,
+> `publish` at the top level) still works — keys are read from either place.
 
 `rig init` scaffolds this; `rig setup` walks you through the settable prefs and
 writes them to the repo or user-wide file for you; `rig run --remember` /
@@ -86,10 +94,10 @@ repo. The repo's `.rig.json` is layered on top — repo wins per key, dictionari
 
 ```jsonc
 // ~/.rig.json
-{ "coverage": { "license": "your-pro-key" }, "aliases": { "coverage": "cov" } }
+{ "dotnet": { "coverage": { "license": "your-pro-key" } }, "aliases": { "coverage": "cov" } }
 ```
 
-A repo's scaffolded blank `coverage.license: ""` falls through to this global key
+A repo's scaffolded blank `dotnet.coverage.license: ""` falls through to this global key
 (empty strings count as unset), so the license lives in exactly one un-committed
 place. `rig info` shows the global path and merged result.
 

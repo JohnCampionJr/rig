@@ -5,7 +5,7 @@ import { isDryRun } from './exec.js'
 import { editJsonc } from './jsonc.js'
 
 /**
- * Set a top-level key in the repo's rig.config.json, preserving comments and
+ * Set a top-level key in the repo's .rig.json, preserving comments and
  * formatting (splice in place). Creates the file with a `$schema` reference if
  * it doesn't exist. This is how `default`/`setup` persist settings.
  */

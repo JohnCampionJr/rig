@@ -3,7 +3,7 @@ import { isInteractive, pickPackage, prompt, BACK } from '../prompts.js'
 import { ui } from '../ui.js'
 import type { Session } from '../types.js'
 
-/** `rig setup` — interactive walkthrough that writes prefs to rig.config.json. */
+/** `rig setup` — interactive walkthrough that writes prefs to .rig.json. */
 export async function setup(session: Session): Promise<number> {
   if (!isInteractive()) {
     ui.error('setup is interactive; run it in a terminal.')
@@ -37,6 +37,6 @@ export async function setup(session: Session): Promise<number> {
     ui.success(`quiet → ${quiet}`)
   }
 
-  prompt.outro('saved to rig.config.json')
+  prompt.outro('saved to .rig.json')
   return 0
 }

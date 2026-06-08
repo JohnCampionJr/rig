@@ -6,7 +6,7 @@ import { ui } from './ui.js'
 import type { RigConfig } from './types.js'
 
 /** The single rig config file (JSONC: comments + trailing commas allowed). */
-export const CONFIG_NAME = 'rig.config.json'
+export const CONFIG_NAME = '.rig.json'
 
 /** Public URL of the JSON Schema, for the `$schema` key (editor autocomplete). */
 export const SCHEMA_URL =
@@ -53,13 +53,22 @@ export function mergeConfig(base: RigConfig, overlay: RigConfig): RigConfig {
   return result
 }
 
-/** Read and parse a rig.config.json at `path` (tolerant of comments). */
+/** Read and parse a .rig.json at `path` (tolerant of comments). */
 function readConfigFile(path: string): RigConfig {
   try {
     const value = parseJsonc<unknown>(readFileSync(path, 'utf8'))
     if (value && typeof value === 'object') {
-      const { $schema, ...rest } = value as RigConfig & { $schema?: string }
+      // `dotnet` is the .NET rig's namespace in a unified config (ignored here);
+      // `node` is reserved for future Node-specific settings (hoist its keys
+      // into the merged config when they exist).
+      const { $schema, dotnet, node, ...rest } = value as RigConfig & {
+        $schema?: string
+        dotnet?: unknown
+        node?: unknown
+      }
       void $schema
+      void dotnet
+      void node
       return rest
     }
   } catch {
@@ -77,13 +86,13 @@ export interface LoadedConfig {
   config: RigConfig
   /** Loaded global config path, or null if absent. */
   globalConfigPath: string | null
-  /** Repo rig.config.json path (the writable file); null if it doesn't exist yet. */
+  /** Repo .rig.json path (the writable file); null if it doesn't exist yet. */
   repoConfigPath: string | null
 }
 
 /**
  * Load and merge config: global (~/.rig.json or $RIG_GLOBAL_CONFIG) → repo
- * rig.config.json (repo wins per key; dictionaries union).
+ * .rig.json (repo wins per key; dictionaries union).
  */
 export function loadConfig(root: string): LoadedConfig {
   const globalPath = globalConfigPath()

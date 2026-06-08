@@ -1,6 +1,6 @@
 /**
  * Tolerant JSON reader: strips `//` and block comments and trailing commas
- * before parsing, so a hand-edited rig.config.json doesn't break loading.
+ * before parsing, so a hand-edited .rig.json doesn't break loading.
  * String contents are preserved (comment-looking text inside strings is kept).
  */
 export function parseJsonc<T = unknown>(text: string): T {

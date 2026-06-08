@@ -73,7 +73,7 @@ internal static class ProjectDiscovery
         if (solutions.Count <= 1) return;
         _warnedMultiSolution = true;
         Ui.Warn($"Multiple solutions found ({string.Join(", ", solutions)}); using {solutions[0]}. " +
-                "Set \"solution\" in .rig.json to choose.");
+                "Set \"dotnet.solution\" in .rig.json to choose.");
     }
 
     /// <summary>Solution file names at the root, *.slnx preferred (matches

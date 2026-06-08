@@ -76,7 +76,7 @@ internal static class SetupVerb
         {
             if (!isGlobal)
                 Ui.Warn("A license in the repo's .rig.json is committed; ~/.rig.json keeps it private.");
-            AddString(["coverage", "license"], license, "•••• (hidden)");
+            AddString(["dotnet", "coverage", "license"], license, "•••• (hidden)");
         }
 
         // Auto-open the report.

@@ -10,6 +10,11 @@ internal sealed record RepoContext(string Root, string? ConfigPath, AnchorKind A
 /// (category, not distance): the nearest <c>.rig.json</c> wins; else the nearest
 /// <c>*.slnx</c>/<c>*.sln</c>; else the nearest <c>.git</c>; else the start
 /// directory. Explicit config therefore wins even over a closer solution.
+///
+/// A <c>.git</c> ancestor bounds the walk: it's the outer edge of the repo, so
+/// the search never climbs past it to anchor on a solution / config that lives
+/// outside the repository (e.g. a stray <c>*.sln</c> up in the home directory
+/// when the repo's own solution sits in a subdirectory).
 /// </summary>
 internal static class RootResolver
 {
@@ -24,7 +29,9 @@ internal static class RootResolver
         {
             rigDir ??= File.Exists(Path.Combine(d.FullName, ConfigFileName)) ? d.FullName : null;
             solutionDir ??= HasSolution(d.FullName) ? d.FullName : null;
-            gitDir ??= HasGit(d.FullName) ? d.FullName : null;
+            // The repo boundary: record it (inclusive of this dir's own config/
+            // solution, checked above) and stop — don't escape the repository.
+            if (HasGit(d.FullName)) { gitDir = d.FullName; break; }
         }
 
         if (rigDir is not null)

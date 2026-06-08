@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
-const RIG_CONFIG_NAMES = ['rig.config.json', '.rig.json']
+const RIG_CONFIG_NAMES = ['.rig.json']
 const LOCKFILES = [
   'pnpm-lock.yaml',
   'yarn.lock',
@@ -25,7 +25,7 @@ function hasWorkspaceMarker(dir: string): boolean {
 
 /**
  * Resolve the repo root by walking up from `start`. Precedence (first found
- * wins, each evaluated as we climb): rig.config.* → workspace marker → lockfile
+ * wins, each evaluated as we climb): .rig.json → workspace marker → lockfile
  * → .git → the starting directory.
  */
 export function resolveRoot(start: string = process.cwd()): string {

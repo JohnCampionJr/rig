@@ -70,6 +70,14 @@
       "type": "object",
       "description": "Override a verb's short alias.",
       "additionalProperties": { "type": "string" }
+    },
+    "dotnet": {
+      "type": "object",
+      "description": "Settings specific to the .NET rig; ignored by the Node rig."
+    },
+    "node": {
+      "type": "object",
+      "description": "Reserved for Node-specific settings."
     }
   }
 }

@@ -73,7 +73,7 @@ internal sealed class TestCommand : Command
 {
     private readonly Argument<string?> _name =
         new("name") { Arity = ArgumentArity.ZeroOrOne, HelpName = "name", Description = "Class/method name, or ~ = !~ != filter shorthand" };
-    private readonly Option<bool> _log = new("--log") { Description = "Apply the test.envPresets 'log' bundle" };
+    private readonly Option<bool> _log = new("--log") { Description = "Apply the envPresets 'log' bundle" };
     private readonly Option<string?> _filter = new("--filter") { Description = "Raw test-platform filter expression" };
     private readonly Option<bool> _watch = new("--watch", "-w") { Description = "Run under dotnet watch (re-run on change)" };
     private readonly Option<string?> _framework =
@@ -253,6 +253,14 @@ internal sealed class InfoCommand : Command
     {
         Aliases.Add("i");
         SetAction(pr => InfoVerb.Execute(Cli.Session(pr)));
+    }
+}
+
+internal sealed class DoctorCommand : Command
+{
+    public DoctorCommand() : base("doctor", "Flag environment problems (sdk, restore, layout)")
+    {
+        SetAction(pr => DoctorVerb.Execute(Cli.Session(pr)));
     }
 }
 

@@ -105,7 +105,7 @@ internal static class CoverageVerb
         var testProject = TestVerb.ResolveTestProject(session, projects);
         if (testProject is null)
         {
-            Ui.Error("No test project found to measure coverage. Add one, or set test.project in .rig.json.");
+            Ui.Error("No test project found to measure coverage. Add one, or set dotnet.test.project in .rig.json.");
             return 1;
         }
 
