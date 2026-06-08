@@ -14,6 +14,9 @@ importers:
       gunshi:
         specifier: ^0.33.0
         version: 0.33.0
+      package-manager-detector:
+        specifier: ^1.6.0
+        version: 1.6.0
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -736,6 +739,9 @@ packages:
   obug@2.1.2:
     resolution: {integrity: sha512-AWGB9WFcRXOQs48Z/udjI5ZcZMHXwX8XPByNpOydgcGsDLIzjGizhoMWJyKAWze7AVW/2W1i+/gPX4YtKe5cyg==}
     engines: {node: '>=12.20.0'}
+
+  package-manager-detector@1.6.0:
+    resolution: {integrity: sha512-61A5ThoTiDG/C8s8UMZwSorAGwMJ0ERVGj2OjoW5pAalsNOg15+iQiPzrLJ4jhZ1HJzmC2PIHT2oEiH3R5fzNA==}
 
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
@@ -1475,6 +1481,8 @@ snapshots:
   object-assign@4.1.1: {}
 
   obug@2.1.2: {}
+
+  package-manager-detector@1.6.0: {}
 
   pathe@2.0.3: {}
 

@@ -4,6 +4,12 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
 
 ## [Unreleased]
 
+### Changed
+- **Package-manager detection now uses `package-manager-detector`** (the library
+  `@antfu/ni` uses) instead of a hand-rolled lockfile check. This picks up cases
+  the old logic missed — notably `pnpm-workspace.yaml` with no lockfile → pnpm —
+  plus the `packageManager` field, corepack, yarn berry, and walking up parents.
+
 ### Added
 - **Monorepo cwd-awareness.** Running rig inside a member package now targets
   that package by default — `rig test` in `packages/web` tests web with no

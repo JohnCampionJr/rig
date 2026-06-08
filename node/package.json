@@ -52,6 +52,7 @@
   "dependencies": {
     "@clack/prompts": "^1.5.1",
     "gunshi": "^0.33.0",
+    "package-manager-detector": "^1.6.0",
     "picocolors": "^1.1.1",
     "tinyglobby": "^0.2.17",
     "yaml": "^2.9.0"

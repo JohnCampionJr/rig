@@ -1,29 +1,24 @@
 import { existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
+import { detect, type AgentName } from 'package-manager-detector'
 import type { PackageManager } from './types.js'
 
-const LOCKFILES: Array<[string, PackageManager]> = [
-  ['pnpm-lock.yaml', 'pnpm'],
-  ['yarn.lock', 'yarn'],
-  ['bun.lockb', 'bun'],
-  ['bun.lock', 'bun'],
-  ['package-lock.json', 'npm'],
-  ['npm-shrinkwrap.json', 'npm'],
-]
+/**
+ * Map a package-manager-detector agent to rig's supported set. Deno (and any
+ * unknown / no result) falls back to npm — rig has no deno command path.
+ */
+export function toPackageManager(name: AgentName | undefined): PackageManager {
+  return name === 'pnpm' || name === 'yarn' || name === 'bun' ? name : 'npm'
+}
 
 /**
- * Detect the package manager for a repo: the `packageManager` field wins
- * (corepack), otherwise the lockfile, otherwise npm.
+ * Detect the package manager at or above `cwd`, following @antfu/ni's logic
+ * (lockfiles, the `packageManager` field, `pnpm-workspace.yaml`, corepack, …)
+ * via the shared `package-manager-detector` library — the same one ni uses.
  */
-export function detectPackageManager(root: string, rootPkg?: Record<string, unknown>): PackageManager {
-  const declared = typeof rootPkg?.packageManager === 'string' ? rootPkg.packageManager : ''
-  for (const pm of ['pnpm', 'yarn', 'bun', 'npm'] as const) {
-    if (declared.startsWith(`${pm}@`) || declared === pm) return pm
-  }
-  for (const [file, pm] of LOCKFILES) {
-    if (existsSync(join(root, file))) return pm
-  }
-  return 'npm'
+export async function detectPm(cwd: string): Promise<PackageManager> {
+  const result = await detect({ cwd })
+  return toPackageManager(result?.name)
 }
 
 /**

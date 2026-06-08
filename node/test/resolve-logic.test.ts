@@ -3,7 +3,7 @@ import { matchPackages, resolveVerb } from '../src/fuzzy.js'
 import { currentPackage } from '../src/discovery.js'
 import { resolveTarget } from '../src/target.js'
 import { buildKillPatterns, parsePids } from '../src/verbs/kill.js'
-import { addCmd, detectPackageManager, dlxCmd, runScriptCmd } from '../src/pm.js'
+import { addCmd, dlxCmd, runScriptCmd, toPackageManager } from '../src/pm.js'
 import { CLEAN_DIRS, cleanCandidates } from '../src/verbs/maintenance.js'
 import { parseLinePct } from '../src/verbs/coverage.js'
 import { compareVersions, isNewer } from '../src/verbs/update.js'
@@ -121,9 +121,12 @@ describe('kill helpers', () => {
 })
 
 describe('pm command builders', () => {
-  it('detects packageManager field', () => {
-    expect(detectPackageManager('/x', { packageManager: 'pnpm@9.0.0' })).toBe('pnpm')
-    expect(detectPackageManager('/x', {})).toBe('npm')
+  it('maps detector agents to the supported set (deno/unknown → npm)', () => {
+    expect(toPackageManager('pnpm')).toBe('pnpm')
+    expect(toPackageManager('yarn')).toBe('yarn')
+    expect(toPackageManager('bun')).toBe('bun')
+    expect(toPackageManager('deno')).toBe('npm')
+    expect(toPackageManager(undefined)).toBe('npm')
   })
   it('runScriptCmd inserts -- for npm only', () => {
     expect(runScriptCmd('npm', 'dev', ['--host'])).toEqual({ file: 'npm', args: ['run', 'dev', '--', '--host'] })

@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { basename, dirname, join, relative, sep } from 'node:path'
 import { glob } from 'tinyglobby'
 import { parse as parseYaml } from 'yaml'
-import { detectPackageManager } from './pm.js'
+import { detectPm } from './pm.js'
 import { matchAnyGlob } from './glob.js'
 import type { PackageInfo, Workspace } from './types.js'
 
@@ -61,7 +61,7 @@ function detectOrchestrator(root: string): 'turbo' | 'nx' | null {
  */
 export async function discoverWorkspace(root: string, exclude: string[] = []): Promise<Workspace> {
   const rootPkgRaw = readJson(join(root, 'package.json')) ?? {}
-  const pm = detectPackageManager(root, rootPkgRaw)
+  const pm = await detectPm(root)
   const rootPackage = toPackageInfo(root, root, rootPkgRaw)
 
   const globs = workspaceGlobs(root, rootPkgRaw)
