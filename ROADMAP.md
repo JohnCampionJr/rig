@@ -34,6 +34,7 @@ Legend: ✅ yes · ❌ no · 🔜 planned · ➖ n/a
 | scripts → verbs (auto) | ➖ | ✅ |
 | graph run (`--all`, dep order) | ❌ | ✅ |
 | interactive menu | ✅ | ✅ (back-nav) |
+| `cd` to a project/package | ✅ | ✅ |
 | fuzzy matching | ✅ | ✅ |
 | shell completion | ✅ (zsh/bash/pwsh) | ✅ (zsh/bash/pwsh) |
 | cross-ecosystem completion | ✅ (shared `[suggest]`) | ✅ (shared `[suggest]`) |

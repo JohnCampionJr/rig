@@ -269,6 +269,19 @@ internal sealed class InfoCommand : Command
     }
 }
 
+internal sealed class CdCommand : Command
+{
+    private readonly Argument<string?> _query =
+        new("query") { Arity = ArgumentArity.ZeroOrOne, HelpName = "query", Description = "Project to jump to (omit to pick)" };
+
+    public CdCommand() : base("cd", "Print a project directory to cd into (needs the rig shell wrapper)")
+    {
+        _query.CompletionSources.Add(_ => Completions.RunnableProjects());
+        Arguments.Add(_query);
+        SetAction(pr => CdVerb.Execute(Cli.Session(pr), pr.GetValue(_query)));
+    }
+}
+
 internal sealed class DoctorCommand : Command
 {
     public DoctorCommand() : base("doctor", "Flag environment problems (sdk, restore, layout)")

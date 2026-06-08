@@ -66,6 +66,18 @@ internal static class CompletionSetup
           compadd -a suggestions
         }
         compdef _rig rig
+
+        # `rig cd` integration. A subprocess can't change the parent shell's directory,
+        # so wrap rig: `rig cd [query]` prints a project dir (its menu goes to stderr)
+        # and we cd to it. Non-cd calls pass straight through to the binary.
+        rig() {
+          if [ "$1" = cd ]; then
+            local __rig_dir
+            __rig_dir="$(command rig "$@")" && [ -n "$__rig_dir" ] && builtin cd -- "$__rig_dir"
+          else
+            command rig "$@"
+          fi
+        }
         """;
 
     private const string Bash = """
@@ -77,6 +89,16 @@ internal static class CompletionSetup
           COMPREPLY=( $(compgen -W "$(rig "[suggest:${COMP_POINT}]" "${COMP_LINE}" 2>/dev/null | grep -vE '^(-\?|-h|/\?|/h)$')" -- "${COMP_WORDS[COMP_CWORD]}") )
         }
         complete -F _rig rig
+
+        # `rig cd` integration — wrap rig so `rig cd [query]` can change the directory.
+        rig() {
+          if [ "$1" = cd ]; then
+            local __rig_dir
+            __rig_dir="$(command rig "$@")" && [ -n "$__rig_dir" ] && builtin cd -- "$__rig_dir"
+          else
+            command rig "$@"
+          fi
+        }
         """;
 
     private const string Pwsh = """
@@ -90,6 +112,19 @@ internal static class CompletionSetup
             ForEach-Object {
               [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
             }
+        }
+
+        # `rig cd` integration — wrap rig so `rig cd [query]` can change the directory.
+        # (The native completer above targets the rig executable.)
+        function rig {
+          $exe = Get-Command -CommandType Application rig -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $exe) { return }
+          if ($args.Count -gt 0 -and $args[0] -eq 'cd') {
+            $dir = & $exe.Source @args
+            if ($LASTEXITCODE -eq 0 -and $dir) { Set-Location -LiteralPath $dir }
+          } else {
+            & $exe.Source @args
+          }
         }
         """;
 }

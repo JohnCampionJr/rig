@@ -54,6 +54,7 @@ trailing token picks the package (`rig dev api`, fuzzy). Args after `--` are for
 | `rebuild` | `rb` | Clean build outputs, then build |
 | `default [project]` | `def` | Show or set the default package |
 | `info` | `i` | Show what rig discovered (pm, packages, scripts) |
+| `cd [query]` | — | Jump to a package dir (fuzzy match, or a picker); needs the `rig` shell wrapper from `rig completion` |
 | `doctor` | — | Flag environment problems (node version, pm, install state) |
 | `init` | — | Scaffold a commented `.rig.json` |
 | `setup` | — | Interactive walkthrough to set preferences |

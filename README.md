@@ -42,6 +42,7 @@ be inferred.
 | `publish [project]` | `pub` | Self-contained `dotnet publish` (`-c`/`-r`/`-o`/`--self-contained`/`--single-file`) |
 | `default [project]` | `def` | Show or set the default run project (no run) |
 | `info` | `i` | Show what rig discovered/resolved for this repo |
+| `cd [query]` | — | Jump to a project dir (fuzzy match, or a picker); needs the `rig` shell wrapper from `rig completion` |
 | `doctor` | — | Flag environment problems (SDK vs `global.json`, restore state, layout); non-zero exit on errors |
 | `init` | — | Scaffold a commented `.rig.json` |
 | `setup` | — | Interactive walkthrough — set local/global prefs without hand-editing |
@@ -129,7 +130,9 @@ eval "$(rig completion bash)"
 Invoke-Expression (& rig completion pwsh | Out-String)
 ```
 
-Tab then completes verbs, aliases, and discovered project/test names.
+Tab then completes verbs, aliases, and discovered project/test names. The same
+line also installs a small `rig` shell wrapper so **`rig cd <project>`** can
+change your directory (a subprocess otherwise can't move the parent shell).
 
 ## Building from source
 

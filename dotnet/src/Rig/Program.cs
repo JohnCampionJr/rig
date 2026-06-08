@@ -75,6 +75,7 @@ static RootCommand BuildRoot()
         new PublishCommand(),
         new DefaultCommand(),
         new InfoCommand(),
+        new CdCommand(),
         new DoctorCommand(),
         new InitCommand(),
         new SetupCommand(),
