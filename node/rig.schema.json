@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/JohnCampionJr/rig/main/node/rig.schema.json",
+  "title": "rig config",
+  "description": "Configuration for rig, the convention-first Node dev launcher.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "defaultProject": {
+      "type": "string",
+      "description": "Default package for package-scoped verbs when several are runnable."
+    },
+    "exclude": {
+      "type": "array",
+      "description": "Glob patterns (matched against package name or relative path) hiding packages from pickers.",
+      "items": { "type": "string" }
+    },
+    "quiet": {
+      "type": "boolean",
+      "description": "Suppress the `→ command` echo."
+    },
+    "env": {
+      "type": "object",
+      "description": "Environment applied to every spawned command.",
+      "additionalProperties": { "type": "string" }
+    },
+    "envPresets": {
+      "type": "object",
+      "description": "Named env presets, e.g. test.envPresets.log → `rig test --log`.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "description": "Coverage options.",
+      "additionalProperties": false,
+      "properties": {
+        "open": { "type": "boolean", "description": "Open the HTML report after running." },
+        "full": { "type": "boolean", "description": "Use the multi-file report." },
+        "min": { "type": "number", "description": "Fail below this line-coverage percentage." }
+      }
+    },
+    "kill": {
+      "type": "object",
+      "description": "Options for the kill verb.",
+      "additionalProperties": false,
+      "properties": {
+        "match": {
+          "type": "array",
+          "description": "Extra command-line patterns to match when killing.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "commands": {
+      "type": "object",
+      "description": "Custom verbs (string, argv array, or per-OS variants).",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "array", "items": { "type": "string" } },
+          { "type": "object" }
+        ]
+      }
+    },
+    "aliases": {
+      "type": "object",
+      "description": "Override a verb's short alias.",
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

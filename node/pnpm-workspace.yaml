@@ -1,0 +1,4 @@
+# pnpm v10+ reads build/install settings here (not the package.json "pnpm" field).
+# No `packages:` key — this is a single-package repo, not a workspace.
+allowBuilds:
+  esbuild: true

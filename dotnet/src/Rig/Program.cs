@@ -7,6 +7,11 @@ using Spectre.Console;
 // rig entry point: build the command tree, resolve an unambiguous verb prefix,
 // then parse + invoke. The wiring lives in *Command.cs; the logic in *Verb.cs.
 
+// Other-awareness: in a Node project, hand off to the Node tool (rignode) so a
+// single `rig` works in either ecosystem, whichever tool wins on PATH.
+if (Dispatcher.MaybeDelegate(args) is int delegated)
+    return delegated;
+
 var root = BuildRoot();
 
 // Split off everything after the first `--` ourselves: those tokens are forwarded

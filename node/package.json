@@ -1,0 +1,66 @@
+{
+  "name": "rignode",
+  "version": "0.1.0",
+  "description": "A convention-first Node dev launcher — less typing, menu-driven, workspace-aware.",
+  "type": "module",
+  "bin": {
+    "rig": "./dist/cli.js",
+    "rignode": "./dist/rignode.js",
+    "rigdotnet": "./dist/rigdotnet.js"
+  },
+  "files": [
+    "dist",
+    "rig.schema.json"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "build:bin": "pnpm build && node scripts/build-binaries.mjs",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "cli",
+    "dev",
+    "launcher",
+    "monorepo",
+    "workspace",
+    "npm",
+    "pnpm",
+    "yarn",
+    "bun"
+  ],
+  "license": "MIT",
+  "author": "John Campion Jr",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JohnCampionJr/rig.git",
+    "directory": "node"
+  },
+  "homepage": "https://github.com/JohnCampionJr/rig/tree/main/node#readme",
+  "bugs": "https://github.com/JohnCampionJr/rig/issues",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.5.1",
+    "@gunshi/plugin-completion": "^0.33.0",
+    "gunshi": "^0.33.0",
+    "picocolors": "^1.1.1",
+    "tinyglobby": "^0.2.17",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}

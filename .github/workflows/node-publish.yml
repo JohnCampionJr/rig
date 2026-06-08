@@ -1,0 +1,45 @@
+name: node-publish
+
+# Publishes @jcamp/rig to npm when a Node tag is pushed, e.g.:
+#   git tag node-v0.1.0 && git push origin node-v0.1.0
+# The published version is taken from the tag (node-v0.1.0 -> 0.1.0).
+# Requires an NPM_TOKEN repo secret (an npm automation token with publish rights).
+
+on:
+  push:
+    tags: ['node-v*']
+
+permissions:
+  contents: read
+  id-token: write # npm provenance (OIDC)
+
+defaults:
+  run:
+    working-directory: node
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+          cache-dependency-path: node/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm build
+
+      - name: Set version from tag
+        run: npm version "${GITHUB_REF_NAME#node-v}" --no-git-tag-version --allow-same-version
+
+      - name: Publish
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
