@@ -23,6 +23,7 @@ const globalArgs = {
   'dry-run': { type: 'boolean', short: 'n', description: 'Print what would run (or change) without doing it' },
   quiet: { type: 'boolean', short: 'q', description: 'Suppress the → command echo' },
   'no-env': { type: 'boolean', description: 'Do not load .env / .env.local' },
+  root: { type: 'boolean', description: 'Act on the whole workspace, ignoring the current package' },
 } as const
 
 type GunshiCtx = { positionals: string[]; rest: string[]; values: Record<string, unknown> }

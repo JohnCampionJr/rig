@@ -21,9 +21,12 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
 - **Focused menu.** Inside a member package, the bare-`rig` menu opens scoped to
   that package — its verbs run on it directly (no picker), it lists its own
   scripts — with a `⌂ whole repo ▸` item to switch up to the whole-workspace
-  menu (and, from there, a `<pkg> ▸` item to drop back into the current
-  package). Switching re-renders in place. Single-package repos and the root are
-  unchanged.
+  menu. From the whole-repo menu, `focus a package ▸` opens a picker (cwd's
+  package pre-selected) to scope into any package. Switching re-renders in place.
+  Single-package repos and the root are unchanged.
+- **`--root` flag.** Act on the whole workspace from anywhere — `rig --root test`
+  (or `rig test --root`) ignores the package cwd is in, and `rig --root` opens
+  the whole-repo menu. The CLI counterpart to the menu's `⌂ whole repo`.
 
 ### Changed
 - **Deterministic verb detection.** Which dev-loop verbs exist is now read from

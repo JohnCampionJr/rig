@@ -76,6 +76,7 @@ describe('peekGlobalFlags', () => {
       dryRun: true,
       quiet: true,
       noEnv: false,
+      root: false,
     })
   })
   it('detects --no-env and -n', () => {
@@ -83,6 +84,10 @@ describe('peekGlobalFlags', () => {
       dryRun: true,
       quiet: false,
       noEnv: true,
+      root: false,
     })
+  })
+  it('detects --root', () => {
+    expect(peekGlobalFlags(['test', '--root']).root).toBe(true)
   })
 })

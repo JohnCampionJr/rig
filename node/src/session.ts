@@ -36,7 +36,8 @@ export async function loadSession(flags: Flags, cwd: string = process.cwd()): Pr
 
   return {
     workspace,
-    currentPackage: currentPackage(workspace.packages, cwd),
+    // `--root` acts on the whole workspace — pretend we're not inside a package.
+    currentPackage: flags.root ? null : currentPackage(workspace.packages, cwd),
     config,
     env,
     flags,

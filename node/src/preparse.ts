@@ -19,6 +19,7 @@ export function peekGlobalFlags(argv: string[]): Flags {
     dryRun: has('--dry-run', '-n'),
     quiet: has('--quiet', '-q'),
     noEnv: has('--no-env'),
+    root: has('--root'),
   }
 }
 

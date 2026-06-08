@@ -82,6 +82,8 @@ export interface Flags {
   dryRun: boolean
   quiet: boolean
   noEnv: boolean
+  /** Act on the whole workspace, ignoring the package cwd is in (`--root`). */
+  root: boolean
 }
 
 /** The resolved context handed to every verb. */

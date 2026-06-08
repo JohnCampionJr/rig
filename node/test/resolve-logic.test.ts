@@ -46,7 +46,7 @@ function session(over: Partial<Session> = {}): Session {
     currentPackage: null,
     config: {},
     env: undefined,
-    flags: { dryRun: false, quiet: false, noEnv: false },
+    flags: { dryRun: false, quiet: false, noEnv: false, root: false },
     globalConfigPath: null,
     repoConfigPath: null,
     ...over,

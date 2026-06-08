@@ -66,6 +66,7 @@ type Choice =
   | { kind: 'watch' }
   | { kind: 'scripts' }
   | { kind: 'focus'; focus: PackageInfo | null }
+  | { kind: 'focusPick' }
   | { kind: 'maintenance' }
   | { kind: 'config' }
   | { kind: 'quit' }
@@ -108,15 +109,11 @@ export function buildOptions(session: Session, focus: PackageInfo | null) {
     options.push({ value: { kind: 'scripts' }, label: 'scripts ▸', hint: `${scripts.length} scripts` })
   }
   // Monorepo focus switch: from a package → up to the whole repo; from the whole
-  // repo (when you're inside a package) → back down to it.
+  // repo → down into a chosen package (the picker pre-selects where cwd is).
   if (focus) {
     options.push({ value: { kind: 'focus', focus: null }, label: '⌂ whole repo ▸', hint: 'all packages' })
-  } else if (session.currentPackage) {
-    options.push({
-      value: { kind: 'focus', focus: session.currentPackage },
-      label: `${session.currentPackage.name} ▸`,
-      hint: 'focus this package',
-    })
+  } else if (session.workspace.isMonorepo) {
+    options.push({ value: { kind: 'focusPick' }, label: 'focus a package ▸', hint: 'scope to one package' })
   }
   options.push({ value: { kind: 'maintenance' }, label: 'maintenance ▸', hint: 'install · outdated · clean · rebuild' })
   options.push({ value: { kind: 'config' }, label: 'config ▸' })
@@ -153,6 +150,15 @@ export async function runMenu(session: Session): Promise<number> {
       case 'focus':
         focus = choice.focus // re-render the menu scoped differently
         continue
+      case 'focusPick': {
+        const members = session.workspace.packages.filter((p) => !p.isRoot)
+        const picked = await pickPackage(members, session.config.defaultProject, 'Focus which package?', {
+          back: true,
+          current: session.currentPackage,
+        })
+        if (picked && picked !== BACK) focus = picked // else stay in whole-repo
+        continue
+      }
       case 'verb': {
         const verb = getDevLoopVerb(choice.name)!
         const pkg = focus ?? (await choosePackage(session, candidatePackages(session, verb), choice.name))

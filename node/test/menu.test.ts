@@ -26,6 +26,7 @@ const verbNames = (opts: ReturnType<typeof buildOptions>) =>
   opts.filter((o) => o.value.kind === 'verb').map((o) => (o.value as { name: string }).name)
 const focusOpt = (opts: ReturnType<typeof buildOptions>) =>
   opts.find((o) => o.value.kind === 'focus') as { value: { kind: 'focus'; focus: PackageInfo | null }; label: string } | undefined
+const hasFocusPick = (opts: ReturnType<typeof buildOptions>) => opts.some((o) => o.value.kind === 'focusPick')
 
 describe('menu buildOptions — focus', () => {
   it('focused on a package shows only its verbs + a "whole repo" switch', () => {
@@ -38,19 +39,35 @@ describe('menu buildOptions — focus', () => {
     expect(opts.some((o) => o.value.kind === 'scripts')).toBe(true)
   })
 
-  it('whole-repo (focus null) shows the union and a switch back to the current package', () => {
+  it('whole-repo (focus null) shows the union and a "focus a package" picker', () => {
     const opts = buildOptions(session(web), null)
     // union across web + api
     expect(verbNames(opts)).toContain('dev')
     expect(verbNames(opts)).toContain('build')
     expect(verbNames(opts)).toContain('test')
-    const f = focusOpt(opts)
-    expect(f?.value.focus).toBe(web)
-    expect(f?.label).toContain('web')
+    // no direct focus switch — a picker instead
+    expect(focusOpt(opts)).toBeUndefined()
+    expect(hasFocusPick(opts)).toBe(true)
   })
 
-  it('at the root (no current package) there is no focus switch', () => {
+  it('a monorepo root (no current package) still offers the focus picker', () => {
     const opts = buildOptions(session(null), null)
     expect(focusOpt(opts)).toBeUndefined()
+    expect(hasFocusPick(opts)).toBe(true)
+  })
+
+  it('a single-package repo has no focus switch or picker', () => {
+    const single = {
+      workspace: { root: '/repo', pm: 'pnpm', rootPackage: root, packages: [root], isMonorepo: false, orchestrator: null },
+      currentPackage: null,
+      config: {},
+      env: undefined,
+      flags: { dryRun: false, quiet: false, noEnv: false, root: false },
+      globalConfigPath: null,
+      repoConfigPath: null,
+    } as unknown as Session
+    const opts = buildOptions(single, null)
+    expect(focusOpt(opts)).toBeUndefined()
+    expect(hasFocusPick(opts)).toBe(false)
   })
 })
