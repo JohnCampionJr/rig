@@ -1,19 +1,19 @@
 # rig — roadmap
 
-Two tools, kept at feature parity: the mature .NET `rig` and the Node `@jcamp/rig`.
+Two tools, kept at feature parity: the mature .NET `rig` and the Node `rignode`.
 
 ## Positioning
 
 - **rig (.NET, [`dotnet/`](dotnet/))** — mature, full-featured, shipped (NuGet v1.1.0).
   The reference for .NET behavior.
-- **@jcamp/rig (Node, [`node/`](node/))** — equally full-featured, 66 tests,
+- **rignode (Node, [`node/`](node/))** — equally full-featured, 66 tests,
   publish-ready. The reference for Node behavior and most feature implementations.
 
 ## Feature parity matrix
 
 Legend: ✅ yes · ❌ no · 🔜 planned · ➖ n/a
 
-| Feature | rig (.NET) | @jcamp/rig (Node) |
+| Feature | rig (.NET) | rignode (Node) |
 | --- | --- | --- |
 | Node ecosystem | ❌ | ✅ |
 | .NET ecosystem | ✅ | ❌ |
@@ -35,7 +35,8 @@ Legend: ✅ yes · ❌ no · 🔜 planned · ➖ n/a
 | graph run (`--all`, dep order) | ❌ | ✅ |
 | interactive menu | ✅ | ✅ (back-nav) |
 | fuzzy matching | ✅ | ✅ |
-| shell completion | ✅ (zsh/bash/pwsh) | ✅ (gunshi) |
+| shell completion | ✅ (zsh/bash/pwsh) | ✅ (zsh/bash/pwsh) |
+| cross-ecosystem completion | ✅ (shared `[suggest]`) | ✅ (shared `[suggest]`) |
 | `--help` / `--version` | ✅ | ✅ |
 | aliases · dry-run · quiet | ✅ | ✅ |
 | config file (JSONC, comment-safe) | ✅ `.rig.json` | ✅ `.rig.json` (+ `$schema`) |
@@ -55,6 +56,6 @@ Legend: ✅ yes · ❌ no · 🔜 planned · ➖ n/a
 - **Unify the config format across both tools** — one `.rig.json` filename, shared
   top-level keys, and tool-specific settings namespaced under `dotnet` / `node`
   (additive: the .NET tool still reads its legacy top-level keys). _In progress._
-- **Publish `@jcamp/rig`** to npm (publish-ready).
+- **Publish `rignode`** to npm (publish-ready).
 </content>
 </invoke>

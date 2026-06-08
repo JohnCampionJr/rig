@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `@jcamp/rig` (the Node port) are documented here.
+All notable changes to `rignode` (the Node port) are documented here.
 
 ## [Unreleased]
 
@@ -26,5 +26,7 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
   at the top level, while tool-specific settings are namespaced under `dotnet` (the .NET
   rig) and `node` (the Node rig); the Node rig ignores the `dotnet` block.
 - **CLI**: built on [gunshi](https://gunshi.dev) — verb aliases, unambiguous-prefix
-  expansion, the `watch` modifier, `--dry-run`/`--quiet`/`--no-env`, auto `--help`, and
-  shell completion (`rig complete zsh|bash|pwsh`).
+  expansion, the `watch` modifier, `--dry-run`/`--quiet`/`--no-env`, and auto `--help`.
+- **Shell completion** (`rig completion zsh|bash|pwsh`) via a shared `[suggest]`
+  protocol with the .NET rig — one generated completer works across both
+  ecosystems (a .NET dir forwards to the .NET tool; a Node dir is answered here).

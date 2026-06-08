@@ -12,6 +12,7 @@ import { doctor } from './verbs/doctor.js'
 import { coverage } from './verbs/coverage.js'
 import { setup } from './verbs/setup.js'
 import { update } from './verbs/update.js'
+import { printCompletion } from './completion.js'
 import { ui } from './ui.js'
 import type { Session } from './types.js'
 
@@ -206,6 +207,12 @@ function standaloneCommands(session: Session) {
       setCode(await kill(session, { token: tokenOf(ctx), ports: Array.isArray(ports) ? ports : [ports] }))
     },
   })
+  const completionCmd = define({
+    name: 'completion',
+    description: 'Print shell-completion setup (zsh/bash/pwsh)',
+    args: { ...globalArgs },
+    run: async (ctx: GunshiCtx) => setCode(printCompletion(ctx.positionals[1])),
+  })
   return {
     info: infoCmd,
     doctor: doctorCmd,
@@ -215,6 +222,7 @@ function standaloneCommands(session: Session) {
     update: updateCmd,
     default: defaultCmd,
     kill: killCmd,
+    completion: completionCmd,
   }
 }
 
@@ -258,7 +266,7 @@ function maintenanceCommands(session: Session) {
 /** Every full verb name rig knows about (for prefix expansion; aliases handled separately). */
 export function verbNames(session: Session): string[] {
   const devLoop = DEV_LOOP_VERBS.map((v) => v.name)
-  const standalone = ['info', 'doctor', 'coverage', 'init', 'setup', 'update', 'default', 'kill', 'install', 'outdated', 'clean', 'rebuild', 'add']
+  const standalone = ['info', 'doctor', 'coverage', 'init', 'setup', 'update', 'default', 'kill', 'completion', 'install', 'outdated', 'clean', 'rebuild', 'add']
   const scripts = allScriptNames(session.workspace)
   return [...new Set([...devLoop, ...standalone, ...scripts])]
 }

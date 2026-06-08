@@ -46,13 +46,12 @@ export function findDotnetTool(): string | null {
  * note. Either way the process exits — the caller stops. No-op (returns) when
  * this is a Node project, so the Node tool runs normally.
  *
- * Completion callbacks are not delegated yet (the two tools speak different
- * completion protocols — forwarding comes later).
+ * Shell completion is routed separately (the shared `[suggest]` protocol, see
+ * app.ts/runSuggest) — it never reaches here.
  */
 export function maybeDelegate(argv: string[], cwd: string = process.cwd()): void {
   // A handoff sets RIG_NO_DELEGATE so the target runs natively (no bounce-back).
   if (process.env.RIG_NO_DELEGATE) return
-  if (argv[0] === 'complete') return
   if (nearestEcosystem(cwd) !== 'dotnet') return
 
   const tool = findDotnetTool()

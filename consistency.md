@@ -14,10 +14,16 @@ What's already aligned: both have `--dry-run/-n`, `--quiet/-q`, `--no-env`; the 
 - **`publish` doesn't exist in Node.** [ROADMAP.md](ROADMAP.md) claims parity, but there is
   no `publish` verb in [node/src/commands.ts](node/src/commands.ts). Either build it or
   correct the matrix.
-- **`completion`** is a real verb in .NET (`completion`/`comp`, prints zsh/bash/pwsh setup);
-  Node leans on gunshi's built-in with no discoverable verb. Add a thin `rig completion` to Node.
-- **`--version` short form.** .NET adds `-v`; Node only has `--version`. Add `-v` to Node
-  (watch for a future verbose-flag collision, though neither tool uses `-v`=verbose today).
+- ✅ ~~**`completion`** is a real verb in .NET (`completion`/`comp`, prints zsh/bash/pwsh
+  setup); Node leans on gunshi's built-in with no discoverable verb.~~ Resolved: Node now has
+  a native `completion` verb, and both tools share one `[suggest:N] "<line>"` protocol (a plain
+  newline list). The generated script is identical in shape, so a single completer works no
+  matter which `rig` wins on PATH — a .NET dir forwards to the .NET tool, a Node dir to the Node
+  one. Replaced gunshi's completion plugin (which wasn't emitting candidates here).
+- ✅ ~~**`--version` short form.** .NET adds `-v`; Node only has `--version`.~~
+  Already satisfied — gunshi's built-in `version` option declares `short: "v"`, so `rig -v` /
+  `rignode -v` already print the version (verified). The original audit missed this. Note: `-v`
+  is therefore reserved for version in both tools, so a future `--verbose` can't claim it.
 
 ### Flag-surface mismatches
 - **`coverage --full`** exists in the .NET CLI and in *both* config schemas (`coverage.full`),
@@ -25,8 +31,10 @@ What's already aligned: both have `--dry-run/-n`, `--quiet/-q`, `--no-env`; the 
 - **`add` targets the project differently.** .NET: `add [package] --project/-p`.
   Node: `add <package> [project]` positional + `--dev/-D`. Pick one convention.
   (`--dev` is genuinely N/A for NuGet, but the project-targeting style should match.)
-- **`kill`** is port-aware in Node (`--port`, repeatable) but not in .NET. Add `--port` to
-  .NET for symmetry.
+- ✅ ~~**`kill`** is port-aware in Node (`--port`, repeatable) but not in .NET.~~
+  .NET `kill` now takes `--port N` (repeatable), and a bare numeric arg (`rig kill 3000`) is
+  treated as a port, matching Node. Frees listeners via `lsof` (Unix) / `netstat` (Windows).
+  See [KillVerb.cs](dotnet/src/Rig/Verbs/KillVerb.cs); pure PID parsers covered by tests.
 
 ### Semantic mismatch (probably leave as-is, but document)
 - **`clean`** means different things: .NET `clean` = `dotnet clean` (light); Node `clean` =

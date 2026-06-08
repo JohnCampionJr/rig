@@ -60,7 +60,10 @@ public static class Dispatcher
     /// <summary>
     /// If the current directory is a Node project, hand off to the Node tool and
     /// return its exit code. Returns null when this is a .NET project (so the
-    /// .NET tool runs normally). Completion callbacks are not delegated yet.
+    /// .NET tool runs normally — including the native <c>[suggest]</c> completion
+    /// directive). In a Node project a <c>[suggest]</c> request is forwarded too:
+    /// the Node rig speaks the same protocol, so its output passes straight
+    /// through. A missing Node tool during completion stays silent (no nudge).
     /// </summary>
     public static int? MaybeDelegate(string[] args)
     {
@@ -68,16 +71,17 @@ public static class Dispatcher
         if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RIG_NO_DELEGATE")))
             return null;
 
-        // Leave the System.CommandLine `[suggest]` completion directive local.
-        if (args.Length > 0 && args[0].StartsWith("[suggest", StringComparison.Ordinal))
-            return null;
-
+        // .NET project → run natively (this includes the `[suggest]` directive).
         if (NearestEcosystem(Directory.GetCurrentDirectory()) != "node")
             return null;
+
+        var isSuggest = args.Length > 0 && args[0].StartsWith("[suggest", StringComparison.Ordinal);
 
         var tool = FindNodeTool();
         if (tool is null)
         {
+            // During completion, offer nothing rather than nudging into the shell.
+            if (isSuggest) return 0;
             Console.Error.WriteLine("📁 Node project — the .NET rig doesn't handle these.");
             Console.Error.WriteLine("   Install the Node rig for `rig` to work here too:");
             Console.Error.WriteLine("   npm install -g rignode");

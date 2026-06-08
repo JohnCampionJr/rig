@@ -1,10 +1,11 @@
+import { spawnSync } from 'node:child_process'
 import { cli } from 'gunshi'
-import completion from '@gunshi/plugin-completion'
 import { ALIASES, buildSubCommands, rootCommand, verbNames } from './commands.js'
-import { maybeDelegate } from './delegate.js'
+import { findDotnetTool, maybeDelegate, nearestEcosystem } from './delegate.js'
 import { setDryRun } from './exec.js'
 import { peekGlobalFlags, preparse } from './preparse.js'
 import { loadSession } from './session.js'
+import { isSuggestDirective, suggestCompletions } from './suggest.js'
 import { ui } from './ui.js'
 
 // Replaced at build time by tsup's `define` (see tsup.config.ts), so the version
@@ -20,6 +21,13 @@ const VERSION = typeof __RIG_VERSION__ === 'string' ? __RIG_VERSION__ : '0.0.0'
  */
 export async function run(delegate: boolean, defaultName: string): Promise<void> {
   const rawArgv = process.argv.slice(2)
+
+  // Shell completion (shared `[suggest:N] "<line>"` protocol). Handle before
+  // gunshi — which can't parse the directive — and route by ecosystem.
+  if (isSuggestDirective(rawArgv[0])) {
+    await runSuggest(rawArgv, delegate)
+    return
+  }
 
   // As `rig`, hand off to the .NET tool when this is a .NET project. As
   // `rignode`, skip this entirely.
@@ -41,6 +49,37 @@ export async function run(delegate: boolean, defaultName: string): Promise<void>
     description: 'A convention-first Node dev launcher — less typing, menu-driven, workspace-aware.',
     subCommands: buildSubCommands(session),
     renderHeader: null,
-    plugins: [completion()],
   })
+}
+
+/**
+ * Answer a `[suggest:N] "<line>"` completion request. As `rig` in a .NET
+ * project, forward to the .NET tool's native `[suggest]` (same protocol — the
+ * output passes straight through). Otherwise answer natively from the Node
+ * workspace. Completion must never write noise to stdout, so a missing target
+ * or any failure yields an empty list (not a nudge), and stays silent.
+ */
+async function runSuggest(rawArgv: string[], delegate: boolean): Promise<void> {
+  if (delegate && !process.env.RIG_NO_DELEGATE && nearestEcosystem(process.cwd()) === 'dotnet') {
+    const tool = findDotnetTool()
+    if (tool) {
+      const result = spawnSync(tool, rawArgv, {
+        stdio: 'inherit',
+        env: { ...process.env, RIG_NO_DELEGATE: '1' },
+      })
+      process.exit(result.status ?? 0)
+    }
+    process.exit(0) // no .NET tool installed → offer nothing rather than an error
+  }
+
+  try {
+    const flags = peekGlobalFlags(rawArgv)
+    const session = await loadSession(flags)
+    const line = rawArgv[1] ?? ''
+    const out = suggestCompletions(session, line)
+    if (out.length) process.stdout.write(out.join('\n') + '\n')
+  } catch {
+    // A broken config / discovery error shouldn't spew into the shell.
+  }
+  process.exit(0)
 }

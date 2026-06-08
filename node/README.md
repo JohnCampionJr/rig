@@ -1,4 +1,4 @@
-# @jcamp/rig
+# rignode
 
 A convention-first **Node** dev launcher. `rig` wraps the everyday package-manager
 loop — dev, build, test, typecheck, lint, coverage, kill — with workspace discovery,
@@ -10,7 +10,7 @@ commands live.
 > ergonomics, Node-native verbs.
 
 ```sh
-npm i -g @jcamp/rig      # or pnpm add -g @jcamp/rig
+npm i -g rignode      # or pnpm add -g rignode
 
 rig                      # interactive menu
 rig dev                  # run the dev server (picks the package in a monorepo)
@@ -58,7 +58,7 @@ trailing token picks the package (`rig dev api`, fuzzy). Args after `--` are for
 | `init` | — | Scaffold a commented `.rig.json` |
 | `setup` | — | Interactive walkthrough to set preferences |
 | `update` | — | Update rig itself (`--check` to only report) |
-| `complete <shell>` | — | Print a shell-completion script (zsh / bash / pwsh) |
+| `completion <shell>` | — | Print shell-completion setup (zsh / bash / pwsh); shared `[suggest]` protocol, cross-ecosystem |
 
 **Global flags:** `--dry-run`/`-n` (print the command, run nothing), `--quiet`/`-q`,
 `--no-env` (skip `.env`). **Watch** either way: `rig dev -w` or `rig watch dev` / `rig w d`.
@@ -115,12 +115,24 @@ so enable a `json-summary` reporter).
 
 ## Shell completion
 
+Add one line for your shell, then restart it:
+
 ```sh
-rig complete zsh  > ~/.zfunc/_rig      # then ensure ~/.zfunc is on $fpath
-rig complete bash > ~/.local/share/bash-completion/completions/rig
+# zsh — ~/.zshrc
+eval "$(rig completion zsh)"
+# bash — ~/.bashrc
+eval "$(rig completion bash)"
+```
+```powershell
+# pwsh — $PROFILE
+Invoke-Expression (& rig completion pwsh | Out-String)
 ```
 
-`rig <tab>` then completes verbs and options.
+`rig <tab>` then completes verbs, aliases, and workspace package names. The
+generated script calls rig's shared `[suggest]` protocol — the *same* one the
+.NET rig uses — so a single completer works in both ecosystems: in a .NET
+project the request is forwarded to the .NET tool, in a Node project it's
+answered here, whichever `rig` wins on `PATH`.
 
 ## License
 

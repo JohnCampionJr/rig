@@ -11,9 +11,6 @@ importers:
       '@clack/prompts':
         specifier: ^1.5.1
         version: 1.5.1
-      '@gunshi/plugin-completion':
-        specifier: ^0.33.0
-        version: 0.33.0(@gunshi/plugin-i18n@0.33.0)(cac@6.7.14)
       gunshi:
         specifier: ^0.33.0
         version: 0.33.0
@@ -41,21 +38,6 @@ importers:
         version: 4.1.8(@types/node@25.9.2)(vite@8.0.16(@types/node@25.9.2)(esbuild@0.27.7)(jiti@2.7.0)(yaml@2.9.0))
 
 packages:
-
-  '@bomb.sh/tab@0.0.15':
-    resolution: {integrity: sha512-Y90ub44TAvbdO9P8mcD/XPyQjFhiR5xmd4Fk7JErmWmEWEUimNnjWiBrVZ16Tj3GA1rLZ+uvCN2V/pzLawv31g==}
-    hasBin: true
-    peerDependencies:
-      cac: ^6.7.14
-      citty: ^0.1.6 || ^0.2.0
-      commander: ^13.1.0
-    peerDependenciesMeta:
-      cac:
-        optional: true
-      citty:
-        optional: true
-      commander:
-        optional: true
 
   '@clack/core@1.4.1':
     resolution: {integrity: sha512-FILJa1gGKEFTGZAJE9RpVhrjKz3c3h4ar60dSv6cGuDqufQ84YEIS3GAGvZiN+H6yaLbbvTFNejjCC4tXpZEuw==}
@@ -229,25 +211,6 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
-
-  '@gunshi/plugin-completion@0.33.0':
-    resolution: {integrity: sha512-aeyfohzwQMCjMJed+UiyBv6BLp1wBQTub2hFMSq4DdwsF/4NtWoswSUK6Q5RAeWJLS7H+jgyl3xxe9HX0G/kJw==}
-    engines: {node: '>= 22'}
-    peerDependencies:
-      '@gunshi/plugin-i18n': 0.33.0
-
-  '@gunshi/plugin-i18n@0.33.0':
-    resolution: {integrity: sha512-9nsSyQNRhXJgKF1YLI0Gp5A9lN6BxeYwrqQBRxxa9AJVl4sZWtYIJfKsI2Hzrqzds+IlJtlFMRHmK733OqTp2A==}
-    engines: {node: '>= 22'}
-    peerDependencies:
-      '@gunshi/plugin-global': 0.33.0
-    peerDependenciesMeta:
-      '@gunshi/plugin-global':
-        optional: true
-
-  '@gunshi/plugin@0.33.0':
-    resolution: {integrity: sha512-VUTMU86eBcQXZNlItOr+RLTueQlhzPMvJivhExvwjWU8TiTzNgMD4QFq6+VPMC7etSWw2WSrDp3Njjbt545GDA==}
-    engines: {node: '>= 22'}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -1017,10 +980,6 @@ packages:
 
 snapshots:
 
-  '@bomb.sh/tab@0.0.15(cac@6.7.14)':
-    optionalDependencies:
-      cac: 6.7.14
-
   '@clack/core@1.4.1':
     dependencies:
       fast-wrap-ansi: 0.2.2
@@ -1126,22 +1085,6 @@ snapshots:
 
   '@esbuild/win32-x64@0.27.7':
     optional: true
-
-  '@gunshi/plugin-completion@0.33.0(@gunshi/plugin-i18n@0.33.0)(cac@6.7.14)':
-    dependencies:
-      '@bomb.sh/tab': 0.0.15(cac@6.7.14)
-      '@gunshi/plugin': 0.33.0
-      '@gunshi/plugin-i18n': 0.33.0
-    transitivePeerDependencies:
-      - cac
-      - citty
-      - commander
-
-  '@gunshi/plugin-i18n@0.33.0':
-    dependencies:
-      '@gunshi/plugin': 0.33.0
-
-  '@gunshi/plugin@0.33.0': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
