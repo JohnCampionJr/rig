@@ -18,6 +18,12 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
   package, and `rig info` shows it. The full repo stays reachable — verbs aren't
   scoped away, so root-level orchestration and cross-package commands are
   unchanged.
+- **Focused menu.** Inside a member package, the bare-`rig` menu opens scoped to
+  that package — its verbs run on it directly (no picker), it lists its own
+  scripts — with a `⌂ whole repo ▸` item to switch up to the whole-workspace
+  menu (and, from there, a `<pkg> ▸` item to drop back into the current
+  package). Switching re-renders in place. Single-package repos and the root are
+  unchanged.
 
 ### Changed
 - **Deterministic verb detection.** Which dev-loop verbs exist is now read from
