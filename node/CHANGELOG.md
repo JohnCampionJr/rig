@@ -4,6 +4,11 @@ All notable changes to `rignode` (the Node port) are documented here.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-06-07
+
+First published release. The version starts at 1.2.0 to track the sibling .NET
+[`rig`](https://github.com/JohnCampionJr/rig) tool in lockstep.
+
 ### Added — initial Node port
 
 - **Discovery**: package-manager detection (npm / pnpm / yarn / bun) from lockfile or
@@ -19,7 +24,8 @@ All notable changes to `rignode` (the Node port) are documented here.
 - **kill**: stop dev servers by package pattern or `--port`.
 - **Config**: `info`, `doctor`, `init`, `setup`, `default`, `update`.
 - **Interactive menu**: project-driven, shows each item's real command, single-key
-  navigation with Backspace/Esc to go back; `scripts ▸ · maintenance ▸ · config ▸`.
+  navigation with Backspace/Esc to go back; `watch ▸ · scripts ▸ · maintenance ▸ ·
+  config ▸`. The `watch ▸` group runs dev/build/test under `--watch`.
 - **Config file**: single `.rig.json` with a `$schema`, JSONC-tolerant reads, and
   comment-preserving writes; global `~/.rig.json`; `.env` / `.env.local` loading;
   named `envPresets` as `--<preset>` flags. Shared with the .NET rig: shared keys live
@@ -30,3 +36,7 @@ All notable changes to `rignode` (the Node port) are documented here.
 - **Shell completion** (`rig completion zsh|bash|pwsh`) via a shared `[suggest]`
   protocol with the .NET rig — one generated completer works across both
   ecosystems (a .NET dir forwards to the .NET tool; a Node dir is answered here).
+- **Cross-ecosystem delegation**: in a .NET project, `rig` hands off to the .NET
+  rig, so a single `rig` works in either ecosystem. Ships three bins: `rig`
+  (ecosystem-aware), `rignode` (force Node), `rigdotnet` (force .NET). Set
+  `RIG_NO_DELEGATE=1` to force native behavior.

@@ -6,6 +6,27 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-06-07
+
+Versioned in lockstep with the Node [`rignode`](node/) 1.2.0 release.
+
+### Added — cross-ecosystem & parity
+- **Cross-ecosystem delegation**: in a Node project, `rig` hands off to the Node
+  `rignode` tool, so a single `rig` works in either ecosystem regardless of which
+  tool wins on PATH. Set `RIG_NO_DELEGATE=1` to force native behavior.
+- **Cross-ecosystem shell completion**: completion now speaks a shared
+  `[suggest:N] "<line>"` protocol, so one installed completer works in both
+  ecosystems — a Node dir forwards to `rignode`, a .NET dir is answered natively.
+- **Port-aware `kill`**: `rig kill --port N` (repeatable) frees whatever is
+  listening on those ports (`lsof` / `netstat`); a bare numeric arg
+  (`rig kill 3000`) is treated as a port too.
+- `add` adopts a positional target — `rig add <package> [project]` (`--project/-p`
+  kept as a back-compat alias), matching the Node rig.
+- Cross-aliases: `run` also answers to `dev`; `restore` also answers to `install`.
+- Interactive menu: `format` promoted to the top level; lowercase group labels;
+  per-row hints; a `commands ▸` group surfacing custom config commands; `init` and
+  `update` added to the config submenu.
+
 ### Fixed
 - Root resolution no longer climbs past a `.git` ancestor: a stray solution or
   config *outside* the repository (e.g. a `*.sln` up in the home directory) can no
