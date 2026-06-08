@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-08
+
 ### Added
 - **`rig cd [query]`** — jump to a project directory. Matching is path-aware
   (name, short name, relative path, or directory basename) and forgiving

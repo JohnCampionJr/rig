@@ -1,10 +1,9 @@
 # Changelog
 
-All notable changes to `@jcamp/rig` (the Node port) are documented here.
-
-## [Unreleased]
+## [1.3.0] - 2026-06-08
 
 ### Changed
+
 - **Inside a package, rig won't silently act on another.** When cwd is in a
   member package that can't run a verb, rig no longer falls through to a
   different package's sole candidate — it picks (interactive) or errors with
@@ -16,6 +15,7 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
   plus the `packageManager` field, corepack, yarn berry, and walking up parents.
 
 ### Added
+
 - **`rig cd [query]`** — jump to a package directory. Matching is path-aware
   (name, short name, relative path, or directory basename) and forgiving
   (exact → prefix → substring → subsequence, e.g. `aw` → `apps/web`); a name
@@ -43,6 +43,7 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
   the whole-repo menu. The CLI counterpart to the menu's `⌂ whole repo`.
 
 ### Changed
+
 - **Deterministic verb detection.** Which dev-loop verbs exist is now read from
   `package.json` instead of blindly probing `node_modules/.bin`. A verb shows
   (in the menu, completion, `--help`, and as a runnable command) only when it
@@ -51,10 +52,10 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
   (`tsconfig`/eslint/prettier config) to be present. `rig lint` no longer exists
   in a repo that has no lint script and no eslint.
 - The npm `npm init` placeholder `test` script (`echo "Error: no test
-  specified" && exit 1`) is recognized and ignored, so `test` only appears with
+specified" && exit 1`) is recognized and ignored, so `test` only appears with
   a real test setup. `test` also detects `jest` in addition to `vitest`.
 - Running a known-but-inapplicable verb (e.g. `rig lint` where nothing lints)
-  now explains *why* instead of a terse "command not found"; a tool that's a
+  now explains _why_ instead of a terse "command not found"; a tool that's a
   declared dependency but not installed says to run install rather than failing
   obscurely.
 
@@ -79,7 +80,7 @@ First published release. The version starts at 1.2.0 to track the sibling .NET
 - **Config**: `info`, `doctor`, `init`, `setup`, `default`, `update`.
 - **Interactive menu**: project-driven, shows each item's real command, single-key
   navigation with Backspace/Esc to go back; `watch ▸ · scripts ▸ · maintenance ▸ ·
-  config ▸`. The `watch ▸` group runs dev/build/test under `--watch`.
+config ▸`. The `watch ▸` group runs dev/build/test under `--watch`.
 - **Config file**: single `.rig.json` with a `$schema`, JSONC-tolerant reads, and
   comment-preserving writes; global `~/.rig.json`; `.env` / `.env.local` loading;
   named `envPresets` as `--<preset>` flags. Shared with the .NET rig: shared keys live
