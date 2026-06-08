@@ -4,6 +4,22 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
 
 ## [Unreleased]
 
+### Changed
+- **Deterministic verb detection.** Which dev-loop verbs exist is now read from
+  `package.json` instead of blindly probing `node_modules/.bin`. A verb shows
+  (in the menu, completion, `--help`, and as a runnable command) only when it
+  makes sense: a matching script, or the tool declared as a dependency (or
+  installed). `tsc`/`eslint`/`prettier` fallbacks also require their config file
+  (`tsconfig`/eslint/prettier config) to be present. `rig lint` no longer exists
+  in a repo that has no lint script and no eslint.
+- The npm `npm init` placeholder `test` script (`echo "Error: no test
+  specified" && exit 1`) is recognized and ignored, so `test` only appears with
+  a real test setup. `test` also detects `jest` in addition to `vitest`.
+- Running a known-but-inapplicable verb (e.g. `rig lint` where nothing lints)
+  now explains *why* instead of a terse "command not found"; a tool that's a
+  declared dependency but not installed says to run install rather than failing
+  obscurely.
+
 ## [1.2.0] - 2026-06-07
 
 First published release. The version starts at 1.2.0 to track the sibling .NET

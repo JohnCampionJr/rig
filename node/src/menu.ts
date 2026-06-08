@@ -1,7 +1,7 @@
 import { ui } from './ui.js'
 import { allScriptNames } from './discovery.js'
 import { runDevLoopForPackage, runScriptForPackage } from './dispatch.js'
-import { DEV_LOOP_VERBS, candidatePackages, describeDevLoop, getDevLoopVerb } from './resolve.js'
+import { DEV_LOOP_VERBS, applicableDevLoopVerbs, candidatePackages, describeDevLoop, getDevLoopVerb } from './resolve.js'
 import { BACK, isInteractive, pickPackage, selectFrom, prompt } from './prompts.js'
 import { info } from './verbs/info.js'
 import { init } from './verbs/init.js'
@@ -80,7 +80,7 @@ export async function runMenu(session: Session): Promise<number> {
     return 0
   }
 
-  const available = DEV_LOOP_VERBS.filter((v) => candidatePackages(session, v).length > 0)
+  const available = applicableDevLoopVerbs(session)
   const scripts = extraScripts(session)
 
   const options: Array<{ value: Choice; label: string; hint?: string }> = []

@@ -1,7 +1,7 @@
 import { define } from 'gunshi'
 import { allScriptNames } from './discovery.js'
 import { dispatchDevLoop, dispatchDevLoopAll, dispatchScript } from './dispatch.js'
-import { DEV_LOOP_VERBS } from './resolve.js'
+import { DEV_LOOP_VERBS, applicableDevLoopVerbs, explainUnavailable, getDevLoopVerb } from './resolve.js'
 import { runMenu } from './menu.js'
 import { info } from './verbs/info.js'
 import { init } from './verbs/init.js'
@@ -267,19 +267,43 @@ function maintenanceCommands(session: Session) {
   return { install: installCmd, outdated: outdatedCmd, clean: cleanCmd, rebuild: rebuildCmd, add: addCmd }
 }
 
-/** Every full verb name rig knows about (for prefix expansion; aliases handled separately). */
+/**
+ * Every full verb name rig knows about for prefix expansion + completion
+ * (aliases handled separately). Dev-loop verbs are filtered to those that
+ * actually apply to this workspace; discovered scripts exclude names already
+ * owned by a dev-loop verb so the surface matches `buildSubCommands`.
+ */
 export function verbNames(session: Session): string[] {
-  const devLoop = DEV_LOOP_VERBS.map((v) => v.name)
+  const devLoop = applicableDevLoopVerbs(session).map((v) => v.name)
   const standalone = ['info', 'doctor', 'coverage', 'init', 'setup', 'update', 'default', 'kill', 'completion', 'install', 'outdated', 'clean', 'rebuild', 'add']
-  const scripts = allScriptNames(session.workspace)
+  const devLoopScriptNames = new Set(DEV_LOOP_VERBS.flatMap((v) => v.scripts))
+  const scripts = allScriptNames(session.workspace).filter((n) => !devLoopScriptNames.has(n))
   return [...new Set([...devLoop, ...standalone, ...scripts])]
+}
+
+/**
+ * Validate the leading verb token before gunshi sees it (gunshi prints a terse
+ * "Command not found" for an unregistered command). Returns a friendly message
+ * when the token is invalid — a *why* for a known-but-inapplicable dev-loop verb
+ * (`lint` where nothing lints), the generic unknown-verb line otherwise — or
+ * null when the token is a real verb/script (or a flag), so the run proceeds.
+ */
+export function invalidVerbMessage(session: Session, token: string | undefined): string | null {
+  if (!token || token.startsWith('-')) return null
+  if (verbNames(session).includes(token)) return null
+  const verb = getDevLoopVerb(token)
+  return verb
+    ? explainUnavailable(verb, 'here')
+    : `unknown verb "${token}". Run \`rig\` for the menu or \`rig --help\`.`
 }
 
 /** Build the gunshi sub-command map: dev-loop verbs, standalone verbs, and scripts. */
 export function buildSubCommands(session: Session): Record<string, ReturnType<typeof define>> {
   const sub: Record<string, ReturnType<typeof define>> = {}
 
-  for (const v of DEV_LOOP_VERBS) {
+  // Only register dev-loop verbs that make sense here (a matching script, or a
+  // declared/installed tool) — `rig lint` shouldn't exist where nothing lints.
+  for (const v of applicableDevLoopVerbs(session)) {
     sub[v.name] = devLoopCommand(session, v.name)
   }
 
@@ -305,9 +329,11 @@ export function rootCommand(session: Session) {
     description: 'A convention-first Node dev launcher',
     args: { ...globalArgs },
     run: async (ctx: GunshiCtx) => {
+      // Invalid leading tokens are caught in app.ts before gunshi; this is a
+      // safety net for any positional that still reaches the entry command.
       const unknown = ctx.positionals[0]
       if (unknown) {
-        ui.error(`unknown verb "${unknown}". Run \`rig\` for the menu or \`rig --help\`.`)
+        ui.error(invalidVerbMessage(session, unknown) ?? `unknown verb "${unknown}".`)
         setCode(1)
         return
       }

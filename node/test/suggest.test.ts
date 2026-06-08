@@ -1,14 +1,29 @@
 import { describe, expect, it } from 'vitest'
 import { isSuggestDirective, suggestCompletions } from '../src/suggest.js'
-import type { Session } from '../src/types.js'
+import type { PackageInfo, Session } from '../src/types.js'
 
-// suggestCompletions only reads session.workspace.packages (names + scripts);
-// a minimal stand-in is enough to exercise the verb/argument-position logic.
-function fakeSession(packages: { name: string; scripts?: Record<string, string> }[]): Session {
+// A complete-enough session: suggestCompletions reads workspace.packages (for
+// the argument position) and runs dev-loop detection (which reads each
+// package's scripts/raw + the workspace root package).
+function fakeSession(
+  packages: { name: string; scripts?: Record<string, string>; raw?: Record<string, unknown> }[],
+): Session {
+  const pkgs: PackageInfo[] = packages.map((p, i) => ({
+    name: p.name,
+    dir: `/repo/${p.name}`,
+    relDir: i === 0 ? '.' : p.name,
+    isRoot: i === 0,
+    private: false,
+    scripts: p.scripts ?? {},
+    raw: p.raw ?? {},
+  }))
   return {
-    workspace: {
-      packages: packages.map((p) => ({ name: p.name, scripts: p.scripts ?? {} })),
-    },
+    workspace: { root: '/repo', pm: 'pnpm', rootPackage: pkgs[0]!, packages: pkgs, isMonorepo: pkgs.length > 1, orchestrator: null },
+    config: {},
+    env: undefined,
+    flags: { dryRun: false, quiet: false, noEnv: false },
+    globalConfigPath: null,
+    repoConfigPath: null,
   } as unknown as Session
 }
 
@@ -27,16 +42,23 @@ describe('isSuggestDirective', () => {
 
 describe('suggestCompletions', () => {
   const session = fakeSession([
-    { name: 'web', scripts: { dev: 'vite', deploy: 'sh deploy' } },
+    { name: 'web', scripts: { dev: 'vite', build: 'vite build', deploy: 'sh deploy' } },
     { name: 'api' },
   ])
 
-  it('offers verbs + aliases at the verb position', () => {
+  it('offers only applicable verbs + their aliases at the verb position', () => {
     const out = suggestCompletions(session, 'rig ')
-    expect(out).toContain('build') // known dev-loop verb
+    expect(out).toContain('dev') // dev script
+    expect(out).toContain('build') // build script
+    expect(out).toContain('b') // build's alias (build applies)
     expect(out).toContain('deploy') // discovered script as a verb
-    expect(out).toContain('b') // short alias
-    expect(out).toContain('completion')
+    expect(out).toContain('completion') // standalone, always available
+    // Deterministic: verbs with no script / dep / config are NOT shown…
+    expect(out).not.toContain('lint')
+    expect(out).not.toContain('format')
+    // …and neither are their aliases.
+    expect(out).not.toContain('l')
+    expect(out).not.toContain('fmt')
   })
 
   it('prefix-filters the current verb word', () => {

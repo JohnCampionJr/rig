@@ -32,8 +32,10 @@ export function suggestCompletions(session: Session, line: string): string[] {
 
   let candidates: string[]
   if (completeCount <= 1) {
-    // Verb position: full verb names + short aliases.
-    candidates = [...verbNames(session), ...Object.keys(ALIASES)]
+    // Verb position: available verb names + the aliases that point at them.
+    const names = verbNames(session)
+    const aliases = Object.keys(ALIASES).filter((a) => names.includes(ALIASES[a]!))
+    candidates = [...names, ...aliases]
   } else {
     // Argument position: the token is always a workspace package.
     candidates = session.workspace.packages.map((p) => p.name)
