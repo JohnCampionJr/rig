@@ -1,8 +1,8 @@
 name: node-publish
 
-# Publishes @jcamp/rig to npm when a Node tag is pushed, e.g.:
-#   git tag node-v0.1.0 && git push origin node-v0.1.0
-# The published version is taken from the tag (node-v0.1.0 -> 0.1.0).
+# Publishes rignode to npm when a Node tag is pushed, e.g.:
+#   git tag node-v1.2.0 && git push origin node-v1.2.0
+# The published version is taken from the tag (node-v1.2.0 -> 1.2.0).
 # Requires an NPM_TOKEN repo secret (an npm automation token with publish rights).
 
 on:
@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 11
       - uses: actions/setup-node@v4
         with:
           node-version: 20
