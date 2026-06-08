@@ -84,7 +84,7 @@ public static class Dispatcher
             if (isSuggest) return 0;
             Console.Error.WriteLine("📁 Node project — the .NET rig doesn't handle these.");
             Console.Error.WriteLine("   Install the Node rig for `rig` to work here too:");
-            Console.Error.WriteLine("   npm install -g rignode");
+            Console.Error.WriteLine("   npm install -g @jcamp/rig");
             return 1;
         }
         return RunTool(tool, args);

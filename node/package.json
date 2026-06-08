@@ -1,5 +1,5 @@
 {
-  "name": "rignode",
+  "name": "@jcamp/rig",
   "version": "1.2.0",
   "description": "A convention-first Node dev launcher — less typing, menu-driven, workspace-aware.",
   "type": "module",

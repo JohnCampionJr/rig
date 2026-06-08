@@ -1,19 +1,19 @@
 # rig — roadmap
 
-Two tools, kept at feature parity: the mature .NET `rig` and the Node `rignode`.
+Two tools, kept at feature parity: the mature .NET `rig` and the Node `@jcamp/rig`.
 
 ## Positioning
 
 - **rig (.NET, [`dotnet/`](dotnet/))** — mature, full-featured, shipped (NuGet v1.1.0).
   The reference for .NET behavior.
-- **rignode (Node, [`node/`](node/))** — equally full-featured, 66 tests,
+- **@jcamp/rig (Node, [`node/`](node/))** — equally full-featured, 66 tests,
   publish-ready. The reference for Node behavior and most feature implementations.
 
 ## Feature parity matrix
 
 Legend: ✅ yes · ❌ no · 🔜 planned · ➖ n/a
 
-| Feature | rig (.NET) | rignode (Node) |
+| Feature | rig (.NET) | @jcamp/rig (Node) |
 | --- | --- | --- |
 | Node ecosystem | ❌ | ✅ |
 | .NET ecosystem | ✅ | ❌ |
@@ -63,6 +63,4 @@ hardcoded Node `publish` verb would be presumptuous and would shadow that user s
 - **Unify the config format across both tools** — one `.rig.json` filename, shared
   top-level keys, and tool-specific settings namespaced under `dotnet` / `node`
   (additive: the .NET tool still reads its legacy top-level keys). _In progress._
-- **Publish `rignode`** to npm (publish-ready).
-</content>
-</invoke>
+- **Publish `@jcamp/rig`** to npm (publish-ready).

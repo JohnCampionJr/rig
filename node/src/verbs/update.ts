@@ -4,7 +4,7 @@ import { run } from '../exec.js'
 import { ui } from '../ui.js'
 import type { Session } from '../types.js'
 
-const PACKAGE = 'rignode'
+const PACKAGE = '@jcamp/rig'
 
 /** Compare two `major.minor.patch` versions (prerelease/build ignored). Pure. */
 export function compareVersions(a: string, b: string): number {

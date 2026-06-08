@@ -1,4 +1,4 @@
-# rignode
+# @jcamp/rig
 
 A convention-first **Node** dev launcher. `rig` wraps the everyday package-manager
 loop — dev, build, test, typecheck, lint, coverage, kill — with workspace discovery,
@@ -10,7 +10,7 @@ commands live.
 > ergonomics, Node-native verbs.
 
 ```sh
-npm i -g rignode      # or pnpm add -g rignode
+npm i -g @jcamp/rig      # or pnpm add -g @jcamp/rig
 
 rig                      # interactive menu
 rig dev                  # run the dev server (picks the package in a monorepo)

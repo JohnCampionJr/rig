@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `rignode` (the Node port) are documented here.
+All notable changes to `@jcamp/rig` (the Node port) are documented here.
 
 ## [Unreleased]
 

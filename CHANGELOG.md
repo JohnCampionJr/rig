@@ -8,7 +8,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.2.0] - 2026-06-07
 
-Versioned in lockstep with the Node [`rignode`](node/) 1.2.0 release.
+Versioned in lockstep with the Node [`@jcamp/rig`](node/) 1.2.0 release.
 
 ### Added — cross-ecosystem & parity
 - **Cross-ecosystem delegation**: in a Node project, `rig` hands off to the Node
