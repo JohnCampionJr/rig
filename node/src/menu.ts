@@ -93,6 +93,13 @@ function canCoverHere(session: Session, focus: PackageInfo | null): boolean {
 /** The top-level menu options for a given focus. Exported for unit testing. */
 export function buildOptions(session: Session, focus: PackageInfo | null) {
   const options: Array<{ value: Choice; label: string; hint?: string }> = []
+  // Focus switch up top: from a package → up to the whole repo; from the whole
+  // repo → down into a chosen package (the picker pre-selects where cwd is).
+  if (focus) {
+    options.push({ value: { kind: 'focus', focus: null }, label: '⌂ whole repo ▸', hint: 'all packages' })
+  } else if (session.workspace.isMonorepo) {
+    options.push({ value: { kind: 'focusPick' }, label: 'focus a package ▸', hint: 'scope to one package' })
+  }
   for (const v of focusedVerbs(session, focus)) {
     const hint = focus ? (describeDevLoop(session, v, focus) ?? undefined) : verbHint(session, v.name)
     options.push({ value: { kind: 'verb', name: v.name }, label: v.name, hint })
@@ -107,13 +114,6 @@ export function buildOptions(session: Session, focus: PackageInfo | null) {
   const scripts = focusedScripts(session, focus)
   if (scripts.length) {
     options.push({ value: { kind: 'scripts' }, label: 'scripts ▸', hint: `${scripts.length} scripts` })
-  }
-  // Monorepo focus switch: from a package → up to the whole repo; from the whole
-  // repo → down into a chosen package (the picker pre-selects where cwd is).
-  if (focus) {
-    options.push({ value: { kind: 'focus', focus: null }, label: '⌂ whole repo ▸', hint: 'all packages' })
-  } else if (session.workspace.isMonorepo) {
-    options.push({ value: { kind: 'focusPick' }, label: 'focus a package ▸', hint: 'scope to one package' })
   }
   options.push({ value: { kind: 'maintenance' }, label: 'maintenance ▸', hint: 'install · outdated · clean · rebuild' })
   options.push({ value: { kind: 'config' }, label: 'config ▸' })

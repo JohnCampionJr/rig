@@ -29,8 +29,9 @@ const focusOpt = (opts: ReturnType<typeof buildOptions>) =>
 const hasFocusPick = (opts: ReturnType<typeof buildOptions>) => opts.some((o) => o.value.kind === 'focusPick')
 
 describe('menu buildOptions — focus', () => {
-  it('focused on a package shows only its verbs + a "whole repo" switch', () => {
+  it('focused on a package shows only its verbs + a "whole repo" switch (at the top)', () => {
     const opts = buildOptions(session(web), web)
+    expect(opts[0]?.value.kind).toBe('focus') // focus switch is the very first item
     expect(verbNames(opts).sort()).toEqual(['build', 'dev']) // web's scripts only — no test (that's api)
     const f = focusOpt(opts)
     expect(f?.value.focus).toBeNull()
