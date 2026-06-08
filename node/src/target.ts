@@ -8,9 +8,12 @@ export type TargetResult =
 
 /**
  * Resolve which package a package-scoped verb targets, given the candidate set
- * and an optional token. Token → fuzzy match (one hit runs, many → pick).
- * No token → the package cwd is in (monorepo cwd-awareness), else defaultProject,
- * else the sole candidate, else pick. Pure.
+ * and an optional token. Token → fuzzy match (one hit runs, many → pick). Pure.
+ *
+ * No token, and you're *inside* a package (monorepo cwd-awareness): run that
+ * package if it can do the verb; otherwise never silently act on another — pick
+ * (or error). No token at the root / `--root` / single-package repo: the
+ * configured default, else the sole candidate, else pick.
  */
 export function resolveTarget(
   session: Session,
@@ -24,17 +27,22 @@ export function resolveTarget(
     return { kind: 'pick', packages: matches }
   }
 
-  // The package cwd is inside wins — but only when it can actually run the verb.
-  const current = session.currentPackage
-  if (current && candidates.some((c) => c.dir === current.dir)) return { kind: 'pkg', pkg: current }
+  if (candidates.length === 0) return { kind: 'none', reason: 'no runnable package found' }
 
+  // Inside a package: act on it if it can run the verb; otherwise require an
+  // explicit choice rather than auto-picking a different package.
+  const current = session.currentPackage
+  if (current) {
+    if (candidates.some((c) => c.dir === current.dir)) return { kind: 'pkg', pkg: current }
+    return { kind: 'pick', packages: candidates }
+  }
+
+  // At the root / --root / single-package: default → sole → pick.
   const def = session.config.defaultProject
   if (def) {
     const matches = matchPackages(def, candidates)
     if (matches.length === 1) return { kind: 'pkg', pkg: matches[0]! }
   }
-
   if (candidates.length === 1) return { kind: 'pkg', pkg: candidates[0]! }
-  if (candidates.length === 0) return { kind: 'none', reason: 'no runnable package found' }
   return { kind: 'pick', packages: candidates }
 }

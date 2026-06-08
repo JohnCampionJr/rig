@@ -83,9 +83,14 @@ describe('resolveTarget', () => {
     const r = resolveTarget(session({ currentPackage: PKGS[1]!, config: { defaultProject: 'api' } }), PKGS)
     expect(r.kind === 'pkg' && r.pkg.name).toBe('@app/web')
   })
-  it('current package is ignored when it cannot run the verb (not a candidate)', () => {
-    // in web, but only api is a candidate → fall through to the sole candidate
+  it('inside a package that cannot run the verb → pick, never auto-pick another', () => {
+    // in web, but only api is a candidate → do NOT silently run api; pick instead
     const r = resolveTarget(session({ currentPackage: PKGS[1]! }), [PKGS[2]!])
+    expect(r.kind).toBe('pick')
+  })
+  it('at the root, a sole candidate still auto-resolves', () => {
+    // no currentPackage (root / --root) → the convenience stays
+    const r = resolveTarget(session(), [PKGS[2]!])
     expect(r.kind === 'pkg' && r.pkg.name).toBe('@app/api')
   })
 })

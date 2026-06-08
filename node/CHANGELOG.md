@@ -5,6 +5,11 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
 ## [Unreleased]
 
 ### Changed
+- **Inside a package, rig won't silently act on another.** When cwd is in a
+  member package that can't run a verb, rig no longer falls through to a
+  different package's sole candidate — it picks (interactive) or errors with
+  guidance (`@demo/ui has no format; name a package …`). The sole-candidate
+  convenience still applies from the workspace root / under `--root`.
 - **Package-manager detection now uses `package-manager-detector`** (the library
   `@antfu/ni` uses) instead of a hand-rolled lockfile check. This picks up cases
   the old logic missed — notably `pnpm-workspace.yaml` with no lockfile → pnpm —

@@ -92,10 +92,14 @@ export async function pickTargetPackage(
   }
   if (target.kind === 'pkg') return target.pkg
   if (!isInteractive()) {
+    const cur = session.currentPackage
+    const example = target.packages[0]?.name ?? '<pkg>'
     ui.error(
       token
         ? `"${token}" matches several packages; be more specific.`
-        : `several packages can ${action}; name one (e.g. \`rig ${action} <pkg>\`).`,
+        : cur && !target.packages.some((p) => p.dir === cur.dir)
+          ? `${cur.name} has no ${action}; name a package (e.g. \`rig ${action} ${example}\`).`
+          : `several packages can ${action}; name one (e.g. \`rig ${action} <pkg>\`).`,
     )
     return null
   }
