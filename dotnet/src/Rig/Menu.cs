@@ -21,15 +21,16 @@ internal static class Menu
         AnsiConsole.Write(new FigletText("rig").Color(Color.Aqua));
 
         var caps = ProbeCapabilities();
-        var (runnable, defaultProject) = LoadRunnable();
+        var (runnable, defaultProject, customCommands) = LoadRunnable();
 
         // Curated top level: the everyday loop plus grouped sub-menus (▸) for the
         // long tail, so the menu stays short instead of listing every verb.
         var present = root.Subcommands.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        string[] primary = ["run", "build", "test", "coverage", "kill", "publish"];
-        var top = primary.Where(present.Contains)
-            .Concat(["watch", "maintenance", "config", "quit"])
-            .ToList();
+        string[] primary = ["run", "build", "test", "coverage", "format", "kill", "publish"];
+        var groups = new List<string> { "watch" };
+        if (customCommands.Count > 0) groups.Add("commands");      // surface custom config commands
+        groups.AddRange(["maintenance", "config", "quit"]);
+        var top = primary.Where(present.Contains).Concat(groups).ToList();
 
         while (true)
         {
@@ -48,14 +49,19 @@ internal static class Menu
                 if (chosen is not null) return root.Parse([chosen, "--watch"]).Invoke();
                 continue; // back
             }
+            if (pick == "commands")
+            {
+                if (Category(root, "commands", [.. customCommands], caps, runnable, defaultProject) is { } code) return code;
+                continue;
+            }
             if (pick == "maintenance")
             {
-                if (Category(root, "Maintenance", ["rebuild", "restore", "clean", "format", "outdated"], caps, runnable, defaultProject) is { } code) return code;
+                if (Category(root, "maintenance", ["restore", "outdated", "clean", "rebuild"], caps, runnable, defaultProject) is { } code) return code;
                 continue;
             }
             if (pick == "config")
             {
-                if (Category(root, "Config", ["default", "info", "doctor", "setup"], caps, runnable, defaultProject) is { } code) return code;
+                if (Category(root, "config", ["info", "doctor", "setup", "default", "init", "update"], caps, runnable, defaultProject) is { } code) return code;
                 continue;
             }
 
@@ -159,16 +165,17 @@ internal static class Menu
     private static string ShortName(string name) =>
         name.Contains('.') ? name[(name.LastIndexOf('.') + 1)..] : name;
 
-    private static (List<string> Runnable, string? Default) LoadRunnable()
+    private static (List<string> Runnable, string? Default, List<string> Commands) LoadRunnable()
     {
         try
         {
             var s = RigSession.Load(Directory.GetCurrentDirectory());
             var runnable = ProjectDiscovery.Discover(s.Root, s.Config.Solution, s.Config.Exclude)
                 .Where(p => p.IsRunnable).Select(p => p.Name).ToList();
-            return (runnable, s.Config.DefaultProject);
+            var commands = s.Config.Commands?.Keys.ToList() ?? [];
+            return (runnable, s.Config.DefaultProject, commands);
         }
-        catch { return ([], null); }
+        catch { return ([], null, []); }
     }
 
     // Sub-menu for `dotnet watch`: the verbs that make sense to watch. Unavailable
@@ -182,7 +189,7 @@ internal static class Menu
             var pick = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
                     .Title("Watch which? [grey](dotnet watch — re-runs on change)[/]")
-                    .UseConverter(v => v == "back" ? "[grey]back[/]" : Label(v, caps))
+                    .UseConverter(v => v == "back" ? "[grey]← back[/]" : Label(v, caps))
                     .AddChoices(choices));
 
             if (pick == "back") return null;
@@ -214,13 +221,38 @@ internal static class Menu
         return [verb];
     }
 
+    // Per-row hints (parity with the Node menu, which hints every row) so the two
+    // tools feel like the same product. Static, action-describing — not the live
+    // resolved command (kept simple); unavailable rows show their reason instead.
+    private static readonly Dictionary<string, string> Hints = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["run"] = "run a project",
+        ["build"] = "build the solution",
+        ["test"] = "run tests",
+        ["coverage"] = "tests + coverage",
+        ["format"] = "dotnet format",
+        ["kill"] = "stop app processes",
+        ["publish"] = "publish a project",
+        ["restore"] = "dotnet restore",
+        ["outdated"] = "newer versions",
+        ["clean"] = "remove build outputs",
+        ["rebuild"] = "clean + build",
+        ["info"] = "what rig discovered",
+        ["doctor"] = "check the environment",
+        ["setup"] = "set preferences",
+        ["default"] = "set the default project",
+        ["init"] = "scaffold .rig.json",
+        ["update"] = "update rig itself",
+    };
+
     private static string Label(string verb, Capabilities? caps)
     {
         if (verb == "quit") return "[grey]quit[/]";
-        if (verb is "watch" or "maintenance" or "config") // grouped sub-menus
-            return $"{char.ToUpperInvariant(verb[0])}{verb[1..]} [grey]▸[/]";
+        if (verb is "watch" or "commands" or "maintenance" or "config") // grouped sub-menus
+            return $"{verb} [grey]▸[/]";
         var reason = caps?.Unavailable(verb);
-        return reason is null ? verb : $"[grey]{verb} ({reason})[/]";
+        if (reason is not null) return $"[grey]{verb} ({reason})[/]";
+        return Hints.TryGetValue(verb, out var hint) ? $"{verb.PadRight(9)} [grey]{hint}[/]" : verb;
     }
 
     private static Capabilities? ProbeCapabilities()

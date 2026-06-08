@@ -3,10 +3,11 @@ using Spectre.Console;
 namespace Rig;
 
 /// <summary>
-/// `rig add &lt;package&gt; [--project P] [forwarded]` — `dotnet add &lt;project&gt; package
+/// `rig add &lt;package&gt; [project] [forwarded]` — `dotnet add &lt;project&gt; package
 /// &lt;pkg&gt;`, but the project is auto-resolved (default → sole → prompt), so you skip
-/// the `dotnet add` ceremony of always naming the project. Extra args (e.g.
-/// <c>--version 1.2.3</c>, <c>--prerelease</c>) forward to `dotnet add package`.
+/// the `dotnet add` ceremony of always naming the project. The project is positional
+/// (matching the Node tool); `--project/-p` is also accepted for back-compat. Extra args
+/// (e.g. <c>--version 1.2.3</c>, <c>--prerelease</c>) forward to `dotnet add package`.
 /// Project resolution (pure) is <see cref="ResolveTarget"/>.
 /// </summary>
 internal static class AddVerb
@@ -51,7 +52,7 @@ internal static class AddVerb
     {
         if (string.IsNullOrWhiteSpace(package))
         {
-            Ui.Error("Usage: rig add <package> [--project <name>] [-- --version 1.2.3]");
+            Ui.Error("Usage: rig add <package> [project] [-- --version 1.2.3]");
             return 1;
         }
 
@@ -64,7 +65,7 @@ internal static class AddVerb
         {
             if (!AnsiConsole.Profile.Capabilities.Interactive)
             {
-                Ui.Error("Multiple projects — pass --project <name>:");
+                Ui.Error("Multiple projects — name one (e.g. `rig add <pkg> <project>`):");
                 foreach (var p in resolution.Ambiguous) Ui.Info($"  • {p.Name}");
                 return 1;
             }

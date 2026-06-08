@@ -24,6 +24,7 @@ internal sealed class RunCommand : Command
     public RunCommand() : base("run", "Run a runnable project (args after -- are forwarded)")
     {
         Aliases.Add("r");
+        Aliases.Add("dev"); // cross-ecosystem muscle memory: Node's `dev` → .NET's `run`
         TreatUnmatchedTokensAsErrors = false;
         _project.CompletionSources.Add(_ => Completions.RunnableProjects());
         Arguments.Add(_project);
@@ -192,6 +193,7 @@ internal sealed class RestoreCommand : Command
     public RestoreCommand() : base("restore", "Restore NuGet packages for the solution")
     {
         Aliases.Add("res");
+        Aliases.Add("install"); // cross-ecosystem muscle memory: Node's `install` → .NET's `restore`
         TreatUnmatchedTokensAsErrors = false;
         SetAction(pr => RestoreVerb.Execute(Cli.Session(pr), Cli.Forwarded(pr)));
     }
@@ -201,7 +203,7 @@ internal sealed class CleanCommand : Command
 {
     private readonly Option<string?> _configuration = new("--configuration", "-c") { Description = "Configuration to clean (e.g. Release)" };
 
-    public CleanCommand() : base("clean", "dotnet clean the solution (MSBuild-aware; lighter than rebuild)")
+    public CleanCommand() : base("clean", "dotnet clean the solution (MSBuild-aware, light; use rebuild to nuke bin/obj)")
     {
         TreatUnmatchedTokensAsErrors = false;
         Options.Add(_configuration);
@@ -223,16 +225,24 @@ internal sealed class AddCommand : Command
 {
     private readonly Argument<string?> _package =
         new("package") { Arity = ArgumentArity.ZeroOrOne, HelpName = "package", Description = "NuGet package id to add" };
-    private readonly Option<string?> _project =
-        new("--project", "-p") { Description = "Project to add to (defaults to defaultProject / the sole project)" };
+    // Project targeting is positional to match the Node tool (`rig add <pkg> [project]`,
+    // less typing). `--project/-p` is kept as a back-compat alias and wins if both are given.
+    private readonly Argument<string?> _project =
+        new("project") { Arity = ArgumentArity.ZeroOrOne, HelpName = "project", Description = "Project to add to (defaults to defaultProject / the sole project)" };
+    private readonly Option<string?> _projectOption =
+        new("--project", "-p") { Description = "Project to add to (alias of the positional; back-compat)" };
 
-    public AddCommand() : base("add", "Add a NuGet package to the default/sole project (args after -- forward)")
+    public AddCommand() : base("add", "Add a NuGet package to a project (args after -- forward)")
     {
         TreatUnmatchedTokensAsErrors = false;
         _project.CompletionSources.Add(_ => Completions.RunnableProjects());
+        _projectOption.CompletionSources.Add(_ => Completions.RunnableProjects());
         Arguments.Add(_package);
-        Options.Add(_project);
-        SetAction(pr => AddVerb.Execute(Cli.Session(pr), pr.GetValue(_package), pr.GetValue(_project), Cli.Forwarded(pr)));
+        Arguments.Add(_project);
+        Options.Add(_projectOption);
+        SetAction(pr => AddVerb.Execute(
+            Cli.Session(pr), pr.GetValue(_package),
+            pr.GetValue(_projectOption) ?? pr.GetValue(_project), Cli.Forwarded(pr)));
     }
 }
 

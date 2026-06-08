@@ -36,10 +36,11 @@ export interface Workspace {
   orchestrator: 'turbo' | 'nx' | null
 }
 
-/** Coverage configuration. */
+/** Coverage configuration.
+ * No `full`: that's a .NET-only knob (ReportGenerator's single-file vs multi-file HTML).
+ * Node delegates coverage to vitest/jest, whose report shape lives in their own config. */
 export interface CoverageConfig {
   open?: boolean
-  full?: boolean
   min?: number
 }
 

@@ -29,7 +29,7 @@ Legend: ✅ yes · ❌ no · 🔜 planned · ➖ n/a
 | add package | ✅ | ✅ |
 | outdated | ✅ | ✅ |
 | clean / rebuild | ✅ | ✅ |
-| publish | ✅ | ✅ |
+| publish | ✅ (`dotnet publish`) | ➖ (via script→verb) |
 | kill (port/proc) | ✅ | ✅ (port-aware) |
 | scripts → verbs (auto) | ➖ | ✅ |
 | graph run (`--all`, dep order) | ❌ | ✅ |
@@ -48,8 +48,15 @@ Legend: ✅ yes · ❌ no · 🔜 planned · ➖ n/a
 | doctor | ✅ | ✅ |
 | self-update | ✅ | ✅ |
 | install method | dotnet tool (NuGet) | npm |
-| unit tests | ✅ | ✅ (66) |
+| unit tests | ✅ (143) | ✅ (74) |
 | published | ✅ | 🔜 (ready) |
+
+**`publish`:** `.NET` has a built-in verb because `dotnet publish` is a canonical framework
+command (RID / self-contained / single-file wired from `publish` config). Node has no canonical
+`publish` — it could mean `npm publish` (registry), a deploy script, or nothing; the
+app-deployment equivalent of `dotnet publish` is Node's `build`. So a `publish` script in any
+`package.json` is automatically surfaced as `rig publish` via the script→verb mechanism. A
+hardcoded Node `publish` verb would be presumptuous and would shadow that user script.
 
 ## Remaining work
 

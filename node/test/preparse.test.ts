@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ALIASES as REAL_ALIASES } from '../src/commands.js'
 import { expandAlias, expandPrefix, expandWatch, peekGlobalFlags, preparse } from '../src/preparse.js'
 
 const VERBS = ['dev', 'build', 'test', 'typecheck', 'lint', 'format', 'coverage', 'kill', 'info']
@@ -50,6 +51,11 @@ describe('expandAlias', () => {
   })
   it('leaves non-aliases untouched', () => {
     expect(expandAlias(['lint'], ALIASES)).toEqual(['lint'])
+  })
+  it('maps the .NET idiom verbs onto their Node equivalents', () => {
+    // Cross-ecosystem muscle memory: `rig run`/`rig restore` work in the Node tool.
+    expect(expandAlias(['run', 'web'], REAL_ALIASES)).toEqual(['dev', 'web'])
+    expect(expandAlias(['restore'], REAL_ALIASES)).toEqual(['install'])
   })
 })
 

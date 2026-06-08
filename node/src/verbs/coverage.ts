@@ -85,7 +85,11 @@ export async function coverage(session: Session, opts: CoverageOptions = {}): Pr
   const code = await runCommand(session, command, opts.env)
   if (code !== 0) return code
 
-  const min = opts.min
+  // Fold in config defaults (mirrors the .NET ResolveOptions): a CLI flag wins,
+  // config supplies the default otherwise.
+  const cov = session.config.coverage
+  const open = opts.open || cov?.open === true
+  const min = opts.min ?? cov?.min
   if (min != null) {
     const summaryPath = join(pkg.dir, 'coverage', 'coverage-summary.json')
     if (existsSync(summaryPath)) {
@@ -102,7 +106,7 @@ export async function coverage(session: Session, opts: CoverageOptions = {}): Pr
     }
   }
 
-  if (opts.open) {
+  if (open) {
     const report = findReport(pkg.dir)
     if (report) await openPath(report)
     else ui.dim(pc.dim('no HTML report found to open'))

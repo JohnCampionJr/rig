@@ -35,6 +35,12 @@ function verbHint(session: Session, verbName: string): string | undefined {
   return `${candidates.length} packages`
 }
 
+/** Dev-loop verbs worth running under watch, that have at least one target package. */
+const WATCHABLE = ['dev', 'build', 'test']
+function watchableVerbs(session: Session) {
+  return WATCHABLE.map((n) => getDevLoopVerb(n)!).filter((v) => candidatePackages(session, v).length > 0)
+}
+
 /**
  * Choose the package a verb/script runs in. A sole candidate is returned
  * directly (no prompt); otherwise a back-aware picker is shown. Returns BACK
@@ -56,6 +62,7 @@ type Choice =
   | { kind: 'verb'; name: string }
   | { kind: 'coverage' }
   | { kind: 'kill' }
+  | { kind: 'watch' }
   | { kind: 'scripts' }
   | { kind: 'maintenance' }
   | { kind: 'config' }
@@ -84,6 +91,9 @@ export async function runMenu(session: Session): Promise<number> {
     options.push({ value: { kind: 'coverage' }, label: 'coverage', hint: 'tests + coverage' })
   }
   options.push({ value: { kind: 'kill' }, label: 'kill', hint: 'stop dev servers' })
+  if (watchableVerbs(session).length) {
+    options.push({ value: { kind: 'watch' }, label: 'watch ▸', hint: 'dev/build/test, re-run on change' })
+  }
   if (scripts.length) {
     options.push({ value: { kind: 'scripts' }, label: 'scripts ▸', hint: `${scripts.length} scripts` })
   }
@@ -115,6 +125,11 @@ export async function runMenu(session: Session): Promise<number> {
       }
       case 'kill':
         return kill(session)
+      case 'watch': {
+        const result = await watchMenu(session)
+        if (result === BACK) continue
+        return result
+      }
       case 'scripts': {
         const result = await scriptsMenu(session)
         if (result === BACK) continue
@@ -165,6 +180,27 @@ async function scriptsMenu(session: Session): Promise<number | typeof BACK> {
       continue // back to the package picker
     }
     return runScriptForPackage(session, choice, pkg)
+  }
+}
+
+/**
+ * Watch group: pick a dev/build/test verb, then a package, and run it under
+ * `--watch`. Mirrors the .NET rig's `watch ▸` submenu (the `w`/`watch` prefix
+ * and `-w` flag still work too). Backing out of the verb list returns to the
+ * top menu; backing out of the package picker returns to the verb list.
+ */
+async function watchMenu(session: Session): Promise<number | typeof BACK> {
+  const verbs = watchableVerbs(session)
+  for (;;) {
+    const choice = await selectFrom<string | typeof BACK>('Watch which? (re-runs on change)', [
+      ...verbs.map((v) => ({ value: v.name, label: v.name, hint: verbHint(session, v.name) })),
+      { value: BACK, label: '← back' },
+    ])
+    if (!choice || choice === BACK) return BACK
+    const verb = getDevLoopVerb(choice)!
+    const pkg = await choosePackage(session, candidatePackages(session, verb), choice)
+    if (pkg === BACK) continue
+    return runDevLoopForPackage(session, verb, pkg, { watch: true })
   }
 }
 

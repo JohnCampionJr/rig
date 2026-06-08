@@ -26,6 +26,17 @@ var verbs = root.Subcommands.Select(c => c.Name).ToList();
 // any unambiguous verb prefix.
 var rewritten = PrefixResolver.Resolve(PrefixResolver.ExpandWatch(head), verbs);
 
+// An unknown leading verb gets a friendly nudge (mirroring the Node tool) instead
+// of System.CommandLine's "Unrecognized command or argument" + full help dump.
+// Option-like tokens (`-…`) and bare `rig` fall through to normal parsing / the menu.
+if (rewritten.Length > 0 && rewritten[0].Length > 0 && rewritten[0][0] != '-'
+    && !root.Subcommands.SelectMany(c => c.Aliases.Prepend(c.Name))
+            .Contains(rewritten[0], StringComparer.OrdinalIgnoreCase))
+{
+    Ui.Error($"unknown verb \"{rewritten[0]}\". Run `rig` for the menu or `rig --help`.");
+    return 1;
+}
+
 try
 {
     return root.Parse(rewritten).Invoke();

@@ -18,9 +18,11 @@ import type { Session } from './types.js'
 
 /** Recursive global flags declared on every command (behavior applied in cli.ts). */
 const globalArgs = {
-  'dry-run': { type: 'boolean', short: 'n', description: "Print what would run, don't run it" },
+  // Wording kept identical to the .NET tool — these are behaviorally identical
+  // cross-tool flags, so their --help text should read the same in both.
+  'dry-run': { type: 'boolean', short: 'n', description: 'Print what would run (or change) without doing it' },
   quiet: { type: 'boolean', short: 'q', description: 'Suppress the → command echo' },
-  'no-env': { type: 'boolean', description: 'Skip .env / .env.local loading' },
+  'no-env': { type: 'boolean', description: 'Do not load .env / .env.local' },
 } as const
 
 type GunshiCtx = { positionals: string[]; rest: string[]; values: Record<string, unknown> }
@@ -65,6 +67,7 @@ function tokenOf(ctx: GunshiCtx): string | undefined {
 export const ALIASES: Record<string, string> = {
   d: 'dev',
   r: 'dev',
+  run: 'dev', // cross-ecosystem muscle memory: .NET's `run` → Node's `dev`
   b: 'build',
   t: 'test',
   tc: 'typecheck',
@@ -76,6 +79,7 @@ export const ALIASES: Record<string, string> = {
   od: 'outdated',
   rb: 'rebuild',
   inst: 'install',
+  restore: 'install', // cross-ecosystem muscle memory: .NET's `restore` → Node's `install`
   c: 'coverage',
 }
 
@@ -241,7 +245,7 @@ function maintenanceCommands(session: Session) {
   })
   const cleanCmd = define({
     name: 'clean',
-    description: 'Remove build-output directories',
+    description: 'Remove build-output dirs (dist/build/.next/… ; not node_modules)',
     args: { ...globalArgs },
     run: async () => setCode(await clean(session)),
   })

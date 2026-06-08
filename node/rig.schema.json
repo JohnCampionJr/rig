@@ -39,7 +39,6 @@
       "additionalProperties": false,
       "properties": {
         "open": { "type": "boolean", "description": "Open the HTML report after running." },
-        "full": { "type": "boolean", "description": "Use the multi-file report." },
         "min": { "type": "number", "description": "Fail below this line-coverage percentage." }
       }
     },

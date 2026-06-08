@@ -11,9 +11,14 @@ What's already aligned: both have `--dry-run/-n`, `--quiet/-q`, `--no-env`; the 
 ## 1. Command consistency
 
 ### Real gaps (parity matrix claims ✅ but isn't)
-- **`publish` doesn't exist in Node.** [ROADMAP.md](ROADMAP.md) claims parity, but there is
+- ✅ ~~**`publish` doesn't exist in Node.** [ROADMAP.md](ROADMAP.md) claims parity, but there is
   no `publish` verb in [node/src/commands.ts](node/src/commands.ts). Either build it or
-  correct the matrix.
+  correct the matrix.~~ Resolved by **correcting the matrix** — not a real gap. .NET's `publish`
+  is a built-in because `dotnet publish` is canonical; Node has no canonical `publish` (the
+  app-artifact equivalent is `build`), so any `publish` script in `package.json` is auto-surfaced
+  as `rig publish` via the script→verb mechanism ([commands.ts:289-294](node/src/commands.ts#L289-L294)).
+  A hardcoded Node verb would shadow that user script. Matrix now reads `➖ (via script→verb)`
+  with a footnote.
 - ✅ ~~**`completion`** is a real verb in .NET (`completion`/`comp`, prints zsh/bash/pwsh
   setup); Node leans on gunshi's built-in with no discoverable verb.~~ Resolved: Node now has
   a native `completion` verb, and both tools share one `[suggest:N] "<line>"` protocol (a plain
@@ -26,74 +31,125 @@ What's already aligned: both have `--dry-run/-n`, `--quiet/-q`, `--no-env`; the 
   is therefore reserved for version in both tools, so a future `--verbose` can't claim it.
 
 ### Flag-surface mismatches
-- **`coverage --full`** exists in the .NET CLI and in *both* config schemas (`coverage.full`),
-  but Node has no `--full` flag — the config key is unreachable from Node's CLI. Add the flag.
-- **`add` targets the project differently.** .NET: `add [package] --project/-p`.
-  Node: `add <package> [project]` positional + `--dev/-D`. Pick one convention.
-  (`--dev` is genuinely N/A for NuGet, but the project-targeting style should match.)
+- ✅ ~~**`coverage --full`** exists in the .NET CLI and in *both* config schemas (`coverage.full`),
+  but Node has no `--full` flag — the config key is unreachable from Node's CLI. Add the flag.~~
+  Resolved by **removing the dead key, not adding the flag** — `full` has no Node analog. In .NET,
+  rig runs ReportGenerator itself and picks the HTML shape (`Html` multi-file vs
+  `HtmlInline_AzurePipelines` single-file, [CoverageVerb.cs:79](dotnet/src/Rig/Verbs/CoverageVerb.cs#L79));
+  in Node, rig delegates to vitest/jest, whose report shape lives in *their* config — rig can't
+  control it. So `full` is now .NET-only: dropped from Node's [types.ts](node/src/types.ts) and
+  [rig.schema.json](node/rig.schema.json). While here, fixed a related gap — Node's
+  `coverage.open`/`coverage.min` config keys weren't read either (only the CLI flags were); they
+  now fold in as defaults mirroring .NET's `ResolveOptions`
+  ([coverage.ts](node/src/verbs/coverage.ts)). Node typecheck + 74 tests pass.
+- ✅ ~~**`add` targets the project differently.** .NET: `add [package] --project/-p`.
+  Node: `add <package> [project]` positional + `--dev/-D`. Pick one convention.~~
+  Resolved by adopting **Node's positional style** (less typing): .NET is now
+  `add <package> [project]` ([Commands.cs](dotnet/src/Rig/Verbs/Commands.cs),
+  [AddVerb.cs](dotnet/src/Rig/Verbs/AddVerb.cs)). `--project/-p` is kept as a back-compat
+  alias (wins if both are given), since the tool already shipped. `--dev/-D` stays Node-only —
+  genuinely N/A for NuGet. Forwarding (`-- --version 1.2.3`), the `--project` alias, and the
+  sole-project fallback are all verified by dry-run; 143 .NET tests still pass.
 - ✅ ~~**`kill`** is port-aware in Node (`--port`, repeatable) but not in .NET.~~
   .NET `kill` now takes `--port N` (repeatable), and a bare numeric arg (`rig kill 3000`) is
   treated as a port, matching Node. Frees listeners via `lsof` (Unix) / `netstat` (Windows).
   See [KillVerb.cs](dotnet/src/Rig/Verbs/KillVerb.cs); pure PID parsers covered by tests.
 
-### Semantic mismatch (probably leave as-is, but document)
-- **`clean`** means different things: .NET `clean` = `dotnet clean` (light); Node `clean` =
-  `rm -rf dist/build/.next/...` (heavier). In .NET the "nuke outputs" job lives in `rebuild`.
-  Same verb, inverted weight — defensible per-ecosystem, but help text should make the
-  difference explicit since users move between them.
+### Semantic mismatch (kept per-ecosystem, documented)
+- ✅ ~~**`clean`** means different things: .NET `clean` = `dotnet clean` (light); Node `clean` =
+  `rm -rf dist/build/.next/...` (heavier). In .NET the "nuke outputs" job lives in `rebuild`.~~
+  Resolved as **defensible per-ecosystem** — each `clean` matches its ecosystem's standard
+  expectation (MSBuild's incremental clean vs. removing JS build-output dirs). Left as-is, but the
+  help text now makes the weight explicit so users moving between them aren't surprised:
+  - .NET: `"dotnet clean the solution (MSBuild-aware, light; use rebuild to nuke bin/obj)"`
+    ([Commands.cs:206](dotnet/src/Rig/Verbs/Commands.cs#L206)).
+  - Node: `"Remove build-output dirs (dist/build/.next/… ; not node_modules)"`
+    ([commands.ts:246](node/src/commands.ts#L246)).
 
 ### Ecosystem-idiom pairs (keep, but consider cross-aliases)
-- **`run` (.NET) vs `dev` (Node)** and **`restore` (.NET) vs `install` (Node).** Intent-aliases
-  already paper over this (`r` → run/dev). Consider adding `dev` as a hidden alias in .NET and
-  `run`/`restore` in Node so muscle memory transfers both directions.
+- ✅ ~~**`run` (.NET) vs `dev` (Node)** and **`restore` (.NET) vs `install` (Node).**~~
+  Cross-aliases added both ways, symmetric for both pairs:
+  - .NET: `run` gains alias `dev`; `restore` gains alias `install`
+    ([Commands.cs](dotnet/src/Rig/Verbs/Commands.cs)). These are real System.CommandLine
+    aliases, so they show in `--help` (matching how `r`/`res` already surface).
+  - Node: `run → dev` and `restore → install` added to the `ALIASES` map
+    ([commands.ts](node/src/commands.ts)), resolved in preparse so `--help` stays clean.
+  - Caveat: in Node, aliases win over same-named package.json scripts — a (rare) script literally
+    named `run` or `restore` would now be shadowed. Consistent with the existing alias design
+    (`t`/`i`/`c` already shadow single-letter scripts).
 
-## 2. Menu consistency
+## 2. Menu consistency — ✅ resolved
 
-Both share the `coverage · kill · maintenance ▸ · config ▸ · quit` spine and identical
-`← back` rendering ([Menu.cs:101](dotnet/src/Rig/Menu.cs#L101)).
+Both share the `coverage · kill · watch ▸ · maintenance ▸ · config ▸ · quit` spine and
+identical `← back` rendering ([Menu.cs](dotnet/src/Rig/Menu.cs),
+[menu.ts](node/src/menu.ts)).
 
-- **Submenu label casing.** .NET capitalizes (`Maintenance ▸`, `Config ▸`,
-  [Menu.cs:53](dotnet/src/Rig/Menu.cs#L53)); Node lowercases (`maintenance ▸`). Node's
-  lowercase matches the verb names — align .NET to lowercase.
-- **Config submenu contents differ:**
-  - .NET: `default · info · doctor · setup`
-  - Node: `info · doctor · setup · default · init · update`
-  - .NET's menu omits `init` and `update` (they exist as verbs but aren't reachable from the
-    menu). Add them, and pick one order (Node leads with `info`, .NET with `default`).
-- **Maintenance submenu contents differ:**
-  - .NET: `rebuild · restore · clean · format · outdated`
-  - Node: `install · outdated · clean · rebuild`
-  - .NET buries `format` here; Node promotes `format` to the top level (it's a dev-loop verb).
-    Decide whether `format` is top-level or maintenance, and unify ordering.
-- **Custom commands/scripts in the menu.** Node has a `scripts ▸` submenu surfacing
-  package.json scripts; .NET has custom `commands` in config but never surfaces them in the
-  menu. Add a `commands ▸` (or `scripts ▸`) group to .NET.
-- **`watch` discoverability.** .NET has a dedicated `watch ▸` submenu; Node only supports the
-  `w`/`watch` prefix modifier with no menu entry. Either add the submenu to Node or drop it
-  from .NET and document the prefix in both.
-- **Hints.** Node attaches a hint to every menu row (`"stop dev servers"`, `"{pm} install"`);
-  .NET only greys-out *unavailable* items with a reason. Adopt Node's per-row hints in .NET so
-  the menus feel like the same product.
+- ✅ ~~**Submenu label casing.** .NET capitalizes (`Maintenance ▸`, `Config ▸`); Node
+  lowercases.~~ .NET now lowercases every group label (`watch ▸`, `maintenance ▸`, `config ▸`,
+  `commands ▸`) to match Node and the verb names.
+- ✅ ~~**Config submenu contents differ** — .NET omits `init`/`update`.~~ Both now show
+  `info · doctor · setup · default · init · update` in the same order.
+- ✅ ~~**Maintenance contents + `format` placement.**~~ Decision: `format` is a dev-loop verb,
+  so it's now **top-level in both** (.NET top: `run · build · test · coverage · format · kill ·
+  publish`). Maintenance unifies to `[restore|install] · outdated · clean · rebuild` (the
+  `restore`/`install` lead is the kept ecosystem idiom).
+- ✅ ~~**Custom commands/scripts in the menu.** .NET never surfaced config `commands`.~~ .NET now
+  shows a `commands ▸` group (only when the repo defines custom commands), mirroring Node's
+  `scripts ▸`. The two stay ecosystem-shaped: Node surfaces package.json scripts, .NET surfaces
+  `.rig.json` commands.
+- ✅ ~~**`watch` discoverability.** Node had only the `w`/`watch` prefix.~~ Node now has a
+  `watch ▸` submenu (pick dev/build/test → runs with `--watch`), mirroring .NET. The prefix and
+  `-w` flag still work in both.
+- ✅ ~~**Hints.** Node hints every row; .NET only greyed unavailable items.~~ .NET now attaches a
+  per-row hint (`run a project`, `tests + coverage`, `clean + build`, …). One fidelity gap, not
+  a parity one: .NET's hints are static action descriptions; Node's are the live resolved command.
 
 ## 3. CLI / UX consistency
 
-- **Unknown-verb message.** Node prints a friendly
+- ✅ ~~**Unknown-verb message.** Node prints a friendly
   `unknown verb "x". Run \`rig\` for the menu or \`rig --help\`.`; .NET falls back to
-  System.CommandLine's default. Mirror Node's message in .NET.
-- **Help-text phrasing is mostly aligned** — `doctor` is deliberately parallel
-  ("Flag environment problems (sdk, restore, layout)" vs "(node, pm, install state)"), `info`
-  is near-identical. Keep this discipline; it's the strongest consistency signal. The
-  `--all`/`--filter` workspace flags (Node-only, no .NET analog) are a fair ecosystem
-  difference — just keep the flag *names* reserved so they never mean something else in .NET.
-- **Config schema is well-unified**, with `node.*` reserved-but-unused — good. One stale spot:
-  [ROADMAP.md](ROADMAP.md) lists `doctor ❌` for .NET, but
-  [dotnet/src/Rig/Verbs/DoctorVerb.cs](dotnet/src/Rig/Verbs/DoctorVerb.cs) now exists
-  (untracked). Update the matrix.
+  System.CommandLine's default.~~ Mirrored in .NET via a pre-parse guard in
+  [Program.cs](dotnet/src/Rig/Program.cs): an unknown leading verb (not a known name/alias,
+  not an option-like `-…` token) now prints the same message and exits 1 — replacing
+  System.CommandLine's "Unrecognized command or argument" + full help dump (which also wrongly
+  exited 0). Bad flags on a *real* verb still get the framework's normal parse error.
+  (Glyph note: .NET's `Ui.Error` colors the line red with no `✗`, matching every other .NET
+  error; Node's `ui.error` prepends `✗` — a pre-existing tool-wide styling difference left as-is.)
+- ✅ **Help-text phrasing is mostly aligned** — verified still true: `doctor` is deliberately
+  parallel ("Flag environment problems (sdk, restore, layout)" vs "(node, pm, install state)"),
+  `info` is near-identical ("Show what rig discovered/resolved for this repo" vs "…discovered…").
+  Keep this discipline; it's the strongest consistency signal. On the workspace flags, one
+  correction to the original audit:
+  - **`--all` / `-a`** is genuinely Node-only (run a verb across all workspace packages in dep
+    order) and both forms are free in .NET — keep the name reserved. .NET has no analog by
+    design: a solution already aggregates its projects, so a bare `rig test` covers them all.
+  - **`--filter` is *not* Node-only — it already collides by ecosystem idiom.** Node `--filter
+    <glob>` selects workspace *packages* (the pnpm/turbo idiom); .NET `test --filter <expr>` is
+    the raw test-platform expression (the native `dotnet test --filter`,
+    [Commands.cs:78](dotnet/src/Rig/Verbs/Commands.cs#L78)). Both are idiomatic and defensible
+    per-ecosystem (like `clean`) — left as-is, not force-aligned. No code change needed: each
+    tool's help text already disambiguates ("Raw test-platform filter expression" vs "limit
+    --all to packages matching a glob or substring").
+- ✅ ~~**Config schema is well-unified**, with `node.*` reserved-but-unused — good. One stale
+  spot: [ROADMAP.md](ROADMAP.md) lists `doctor ❌` for .NET, but
+  [dotnet/src/Rig/Verbs/DoctorVerb.cs](dotnet/src/Rig/Verbs/DoctorVerb.cs) now exists.~~
+  Matrix is now accurate: `doctor | ✅ | ✅`, and ".NET doctor" is gone from "Remaining work"
+  (the verb is wired in [Program.cs](dotnet/src/Rig/Program.cs#L78) and
+  [Commands.cs:264](dotnet/src/Rig/Verbs/Commands.cs#L264)). Also refreshed the stale unit-test
+  cell while there: `✅ (143)` / `✅ (74)` (was `(66)` for Node).
 
-## Suggested priority order
+## Status — ✅ all audit items resolved
 
-1. Confirm/fix the Node `publish` gap.
-2. Add `init` + `update` to .NET's config menu.
-3. Unify submenu label casing + ordering.
-4. Add `coverage --full` to Node.
-5. Reconcile the `add` project-targeting convention.
+Every item above is closed. The outcomes split three ways:
+
+- **Aligned in code** — `completion`, `--version -v`, port-aware `kill`, the `run`/`dev` &
+  `restore`/`install` cross-aliases, the whole menu pass (casing, config/maintenance contents,
+  `commands ▸`, `watch ▸`, hints), the friendly unknown-verb message, the `add` positional
+  project convention, and folding Node's `coverage` config defaults.
+- **Resolved by correcting the docs** — `publish` (Node has no canonical analog; matrix fixed),
+  `coverage --full` (removed the dead Node key rather than adding a no-op flag), and the
+  doctor/ROADMAP matrix staleness.
+- **Kept as defensible per-ecosystem differences, now documented** — `clean`'s weight, and the
+  `--filter` idiom collision (`dotnet test --filter` vs pnpm-style package selection).
+
+No open follow-ups.
