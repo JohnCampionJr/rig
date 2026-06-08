@@ -1,0 +1,9 @@
+{
+  "name": "@demo/ui",
+  "private": true,
+  "//": "No scripts on purpose — rig detects build/typecheck (typescript + tsconfig) and lint (eslint + config) from the declared tools.",
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "eslint": "^9.0.0"
+  }
+}

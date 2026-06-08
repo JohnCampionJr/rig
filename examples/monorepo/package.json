@@ -1,0 +1,5 @@
+{
+  "name": "@demo/root",
+  "private": true,
+  "description": "A no-install demo workspace for exercising the Node rig (detection, focus, --root)."
+}
