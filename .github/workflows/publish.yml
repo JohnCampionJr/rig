@@ -25,11 +25,11 @@ jobs:
             10.0.x
 
       - name: Test
-        run: dotnet test Rig.slnx --configuration Release
+        run: dotnet test dotnet/Rig.slnx --configuration Release
 
       - name: Pack (version from tag)
         run: >
-          dotnet pack src/Rig/Rig.csproj -c Release -o artifacts
+          dotnet pack dotnet/src/Rig/Rig.csproj -c Release -o artifacts
           --include-symbols -p:SymbolPackageFormat=snupkg
           -p:Version="${GITHUB_REF_NAME#v}"
 

@@ -39,8 +39,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- README sits at the repo root (one level above src/Rig once extracted). -->
-    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <!-- README sits at the repo root (two levels above dotnet/src/Rig). -->
+    <None Include="../../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
   <!-- Tool is an Exe with top-level statements (no public surface), so the test

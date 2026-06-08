@@ -126,8 +126,8 @@ Tab then completes verbs, aliases, and discovered project/test names.
 ## Building from source
 
 ```sh
-dotnet test Rig.slnx     # or: dotnet test tests/Rig.Tests/Rig.Tests.csproj
+dotnet test dotnet/Rig.slnx     # or: dotnet test dotnet/tests/Rig.Tests/Rig.Tests.csproj
 ```
 
-See [docs/DESIGN.md](docs/DESIGN.md) for architecture and the rationale behind the
+See [dotnet/docs/DESIGN.md](dotnet/docs/DESIGN.md) for architecture and the rationale behind the
 key decisions, and [CHANGELOG.md](CHANGELOG.md) for release history.
