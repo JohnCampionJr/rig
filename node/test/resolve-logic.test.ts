@@ -109,6 +109,22 @@ describe('resolveCdTarget', () => {
     // "oo" is a substring of both names → the deeper directory wins
     expect(resolveCdTarget(nested, 'oo')?.dir).toBe('/repo/foo/bar')
   })
+  it('is path-aware: matches the directory even when the name differs', () => {
+    const p = pkg('@acme/core', '/repo/libs/dashboard') // name has no "dashboard"
+    expect(resolveCdTarget([p], 'dashboard')?.dir).toBe('/repo/libs/dashboard')
+  })
+  it('matches a subsequence (aw → apps/web)', () => {
+    expect(resolveCdTarget([pkg('@x/web', '/repo/apps/web')], 'aw')?.dir).toBe('/repo/apps/web')
+  })
+  it('an exact short-name match outranks a substring match', () => {
+    const pkgs = [pkg('@x/api', '/repo/api'), pkg('@x/api-client', '/repo/api-client')]
+    expect(resolveCdTarget(pkgs, 'api')?.name).toBe('@x/api')
+  })
+  it('a name match outranks a path-only match (web vs tests/web)', () => {
+    const pkgs = [pkg('@x/web', '/repo/apps/web'), pkg('@x/web-tests', '/repo/tests/web')]
+    // both have a "web" directory basename; @x/web also matches by name → it wins
+    expect(resolveCdTarget(pkgs, 'web')?.name).toBe('@x/web')
+  })
 })
 
 describe('currentPackage', () => {

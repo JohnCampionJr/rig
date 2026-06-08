@@ -37,8 +37,11 @@ export function suggestCompletions(session: Session, line: string): string[] {
     const aliases = Object.keys(ALIASES).filter((a) => names.includes(ALIASES[a]!))
     candidates = [...names, ...aliases]
   } else {
-    // Argument position: the token is always a workspace package.
-    candidates = session.workspace.packages.map((p) => p.name)
+    // Argument position: a workspace package — offer full and short names.
+    candidates = session.workspace.packages.flatMap((p) => {
+      const short = p.name.includes('/') ? p.name.slice(p.name.lastIndexOf('/') + 1) : p.name
+      return short === p.name ? [p.name] : [p.name, short]
+    })
   }
   if (editing.startsWith('-')) candidates = [...candidates, ...GLOBAL_FLAGS]
 

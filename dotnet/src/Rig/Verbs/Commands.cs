@@ -276,7 +276,7 @@ internal sealed class CdCommand : Command
 
     public CdCommand() : base("cd", "Print a project directory to cd into (needs the rig shell wrapper)")
     {
-        _query.CompletionSources.Add(_ => Completions.RunnableProjects());
+        _query.CompletionSources.Add(_ => Completions.AllProjects());
         Arguments.Add(_query);
         SetAction(pr => CdVerb.Execute(Cli.Session(pr), pr.GetValue(_query)));
     }

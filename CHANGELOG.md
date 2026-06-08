@@ -7,12 +7,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
-- **`rig cd [query]`** — jump to a project directory. With a query, the best
-  fuzzy match (deepest on ties); without one, an interactive picker. Since a
-  subprocess can't change the parent shell's directory, `rig completion`'s
-  script now also installs a thin `rig` wrapper that does the `cd` (the command
-  prints the dir to stdout, its menu/messages to stderr). One
-  `eval "$(rig completion zsh)"` enables both completion and `rig cd`.
+- **`rig cd [query]`** — jump to a project directory. Matching is path-aware
+  (name, short name, relative path, or directory basename) and forgiving
+  (exact → prefix → substring → subsequence, e.g. `sr` → `src/Rig`); a name
+  match outranks a path-only one. A query that matches nothing falls back to the
+  picker; no query opens it straight away (now offering all projects, not just
+  runnable, plus `(root)`). Since a subprocess can't change the parent shell's
+  directory, `rig completion`'s script now also installs a thin `rig` wrapper
+  that does the `cd` (the command prints the dir to stdout, its menu/messages to
+  stderr). One `eval "$(rig completion zsh)"` enables both completion and `rig cd`.
 
 ## [1.2.0] - 2026-06-07
 
