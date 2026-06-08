@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { matchPackages, resolveVerb } from '../src/fuzzy.js'
+import { currentPackage } from '../src/discovery.js'
 import { resolveTarget } from '../src/target.js'
 import { buildKillPatterns, parsePids } from '../src/verbs/kill.js'
 import { addCmd, detectPackageManager, dlxCmd, runScriptCmd } from '../src/pm.js'
@@ -42,6 +43,7 @@ describe('resolveVerb', () => {
 function session(over: Partial<Session> = {}): Session {
   return {
     workspace: { root: '/repo', pm: 'pnpm', rootPackage: PKGS[0]!, packages: PKGS, isMonorepo: true, orchestrator: null },
+    currentPackage: null,
     config: {},
     env: undefined,
     flags: { dryRun: false, quiet: false, noEnv: false },
@@ -71,6 +73,35 @@ describe('resolveTarget', () => {
   })
   it('no token + many + no default → pick', () => {
     expect(resolveTarget(session(), PKGS).kind).toBe('pick')
+  })
+
+  it('no token + current package (cwd) wins over the picker', () => {
+    const r = resolveTarget(session({ currentPackage: PKGS[1]! }), PKGS)
+    expect(r.kind === 'pkg' && r.pkg.name).toBe('@app/web')
+  })
+  it('current package beats the configured default', () => {
+    const r = resolveTarget(session({ currentPackage: PKGS[1]!, config: { defaultProject: 'api' } }), PKGS)
+    expect(r.kind === 'pkg' && r.pkg.name).toBe('@app/web')
+  })
+  it('current package is ignored when it cannot run the verb (not a candidate)', () => {
+    // in web, but only api is a candidate → fall through to the sole candidate
+    const r = resolveTarget(session({ currentPackage: PKGS[1]! }), [PKGS[2]!])
+    expect(r.kind === 'pkg' && r.pkg.name).toBe('@app/api')
+  })
+})
+
+describe('currentPackage', () => {
+  it('finds the deepest member containing cwd', () => {
+    expect(currentPackage(PKGS, '/repo/apps/web/src/x')?.name).toBe('@app/web')
+    expect(currentPackage(PKGS, '/repo/apps/api')?.name).toBe('@app/api')
+  })
+  it('is null at the root or in a non-package subdir', () => {
+    expect(currentPackage(PKGS, '/repo')).toBeNull()
+    expect(currentPackage(PKGS, '/repo/apps')).toBeNull()
+  })
+  it('does not match a sibling by name prefix', () => {
+    const pkgs = [pkg('root', '/repo', true), pkg('@x/web', '/repo/web'), pkg('@x/web2', '/repo/web2')]
+    expect(currentPackage(pkgs, '/repo/web2/src')?.name).toBe('@x/web2')
   })
 })
 

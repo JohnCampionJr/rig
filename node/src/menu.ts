@@ -54,6 +54,7 @@ async function choosePackage(
   if (candidates.length === 1) return candidates[0]!
   const picked = await pickPackage(candidates, session.config.defaultProject, `Which package to ${action}?`, {
     back: true,
+    current: session.currentPackage,
   })
   return picked && picked !== BACK ? picked : BACK
 }
@@ -165,6 +166,7 @@ async function scriptsMenu(session: Session): Promise<number | typeof BACK> {
     } else {
       const picked = await pickPackage(packages, session.config.defaultProject, 'Scripts — which package?', {
         back: true,
+        current: session.currentPackage,
       })
       if (!picked || picked === BACK) return BACK
       pkg = picked

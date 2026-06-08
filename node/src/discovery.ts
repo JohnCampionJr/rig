@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { basename, dirname, join, relative } from 'node:path'
+import { basename, dirname, join, relative, sep } from 'node:path'
 import { glob } from 'tinyglobby'
 import { parse as parseYaml } from 'yaml'
 import { detectPackageManager } from './pm.js'
@@ -100,6 +100,23 @@ export async function discoverWorkspace(root: string, exclude: string[] = []): P
     isMonorepo: filtered.length > 0,
     orchestrator: detectOrchestrator(root),
   }
+}
+
+/**
+ * The member package you're "in": the deepest non-root package whose directory
+ * contains `cwd`. Null at the workspace root (or in a non-package subdir), so
+ * the caller falls back to the configured default / picker. Drives monorepo
+ * cwd-awareness — `rig test` inside `packages/web` targets web.
+ */
+export function currentPackage(packages: PackageInfo[], cwd: string): PackageInfo | null {
+  let best: PackageInfo | null = null
+  for (const p of packages) {
+    if (p.isRoot) continue
+    if (cwd === p.dir || cwd.startsWith(p.dir + sep)) {
+      if (!best || p.dir.length > best.dir.length) best = p
+    }
+  }
+  return best
 }
 
 /**

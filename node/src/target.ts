@@ -9,7 +9,8 @@ export type TargetResult =
 /**
  * Resolve which package a package-scoped verb targets, given the candidate set
  * and an optional token. Token → fuzzy match (one hit runs, many → pick).
- * No token → defaultProject, else the sole candidate, else pick. Pure.
+ * No token → the package cwd is in (monorepo cwd-awareness), else defaultProject,
+ * else the sole candidate, else pick. Pure.
  */
 export function resolveTarget(
   session: Session,
@@ -22,6 +23,10 @@ export function resolveTarget(
     if (matches.length === 0) return { kind: 'none', reason: `no runnable package matches "${token}"` }
     return { kind: 'pick', packages: matches }
   }
+
+  // The package cwd is inside wins — but only when it can actually run the verb.
+  const current = session.currentPackage
+  if (current && candidates.some((c) => c.dir === current.dir)) return { kind: 'pkg', pkg: current }
 
   const def = session.config.defaultProject
   if (def) {

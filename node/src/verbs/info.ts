@@ -14,6 +14,9 @@ export async function info(session: Session): Promise<number> {
   row('pm', workspace.pm)
   row('layout', workspace.isMonorepo ? `monorepo (${workspace.packages.length - 1} packages)` : 'single package')
   if (workspace.orchestrator) row('orchestrator', `${workspace.orchestrator} (rig runs its own graph)`)
+  if (workspace.isMonorepo) {
+    row('current pkg', session.currentPackage ? session.currentPackage.name : pc.dim('(root — none)'))
+  }
   row('default', config.defaultProject ?? pc.dim('(none)'))
   row('config', session.repoConfigPath ?? pc.dim('(.rig.json, not yet created)'))
   row('global cfg', session.globalConfigPath ?? pc.dim('(none)'))

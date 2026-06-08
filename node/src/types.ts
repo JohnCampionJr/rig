@@ -87,6 +87,8 @@ export interface Flags {
 /** The resolved context handed to every verb. */
 export interface Session {
   workspace: Workspace
+  /** The member package cwd is inside (monorepo cwd-awareness), or null at root. */
+  currentPackage: PackageInfo | null
   config: RigConfig
   /** Merged env overlay (or undefined when nothing to override). */
   env: Record<string, string> | undefined

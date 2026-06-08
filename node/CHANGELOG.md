@@ -4,6 +4,15 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
 
 ## [Unreleased]
 
+### Added
+- **Monorepo cwd-awareness.** Running rig inside a member package now targets
+  that package by default — `rig test` in `packages/web` tests web with no
+  picker (the current package beats the configured default; an explicit token
+  like `rig test api` still wins). Pickers mark and pre-select the current
+  package, and `rig info` shows it. The full repo stays reachable — verbs aren't
+  scoped away, so root-level orchestration and cross-package commands are
+  unchanged.
+
 ### Changed
 - **Deterministic verb detection.** Which dev-loop verbs exist is now read from
   `package.json` instead of blindly probing `node_modules/.bin`. A verb shows

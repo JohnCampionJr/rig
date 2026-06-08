@@ -48,18 +48,20 @@ export async function pickPackage(
   packages: PackageInfo[],
   defaultName: string | undefined,
   message = 'Which package?',
-  opts: { back?: boolean } = {},
+  opts: { back?: boolean; current?: PackageInfo | null } = {},
 ): Promise<PackageInfo | typeof BACK | null> {
   const def = defaultName
     ? packages.find((p) => p.name === defaultName || p.name.endsWith(`/${defaultName}`))
     : undefined
+  const current = opts.current ? packages.find((p) => p.dir === opts.current!.dir) : undefined
   const choices: Choice<PackageInfo | typeof BACK>[] = packages.map((p) => ({
     value: p,
-    label: p === def ? `${p.name} (default)` : p.name,
+    label: p === current ? `${p.name} (current)` : p === def ? `${p.name} (default)` : p.name,
     hint: p.isRoot ? 'root' : p.relDir,
   }))
   if (opts.back) choices.push({ value: BACK, label: '← back' })
-  const picked = await selectFrom(message, choices, def ?? packages[0])
+  // Pre-select where you are, then the configured default, then the first.
+  const picked = await selectFrom(message, choices, current ?? def ?? packages[0])
   return picked
 }
 

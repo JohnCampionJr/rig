@@ -99,7 +99,9 @@ export async function pickTargetPackage(
     )
     return null
   }
-  const picked = await pickPackage(target.packages, session.config.defaultProject, `Which package to ${action}?`)
+  const picked = await pickPackage(target.packages, session.config.defaultProject, `Which package to ${action}?`, {
+    current: session.currentPackage,
+  })
   return picked && picked !== BACK ? picked : null
 }
 

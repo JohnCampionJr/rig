@@ -1,5 +1,5 @@
 import { loadConfig } from './config.js'
-import { discoverWorkspace } from './discovery.js'
+import { currentPackage, discoverWorkspace } from './discovery.js'
 import { loadDotEnvFiles } from './dotenv.js'
 import { resolveRoot } from './root.js'
 import type { Flags, RigConfig, Session } from './types.js'
@@ -36,6 +36,7 @@ export async function loadSession(flags: Flags, cwd: string = process.cwd()): Pr
 
   return {
     workspace,
+    currentPackage: currentPackage(workspace.packages, cwd),
     config,
     env,
     flags,
