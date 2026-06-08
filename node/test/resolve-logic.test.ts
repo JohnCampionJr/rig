@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { matchPackages, resolveVerb } from '../src/fuzzy.js'
 import { currentPackage } from '../src/discovery.js'
+import { resolveCdTarget } from '../src/verbs/cd.js'
 import { resolveTarget } from '../src/target.js'
 import { buildKillPatterns, parsePids } from '../src/verbs/kill.js'
 import { addCmd, dlxCmd, runScriptCmd, toPackageManager } from '../src/pm.js'
@@ -92,6 +93,21 @@ describe('resolveTarget', () => {
     // no currentPackage (root / --root) → the convenience stays
     const r = resolveTarget(session(), [PKGS[2]!])
     expect(r.kind === 'pkg' && r.pkg.name).toBe('@app/api')
+  })
+})
+
+describe('resolveCdTarget', () => {
+  it('matches a package and returns its dir', () => {
+    expect(resolveCdTarget(PKGS, 'web')?.dir).toBe('/repo/apps/web')
+    expect(resolveCdTarget(PKGS, 'api')?.dir).toBe('/repo/apps/api')
+  })
+  it('returns null when nothing matches', () => {
+    expect(resolveCdTarget(PKGS, 'zzz')).toBeNull()
+  })
+  it('prefers the deepest dir when several match equally', () => {
+    const nested = [pkg('@x/foo', '/repo/foo'), pkg('@x/foobar', '/repo/foo/bar')]
+    // "oo" is a substring of both names → the deeper directory wins
+    expect(resolveCdTarget(nested, 'oo')?.dir).toBe('/repo/foo/bar')
   })
 })
 

@@ -1,3 +1,4 @@
+import type { Writable } from 'node:stream'
 import * as clack from '@clack/prompts'
 import type { PackageInfo } from './types.js'
 
@@ -7,6 +8,14 @@ export const BACK = Symbol('back')
 /** Whether we can drive an interactive prompt (both ends are a TTY). */
 export function isInteractive(): boolean {
   return Boolean(process.stdout.isTTY && process.stdin.isTTY)
+}
+
+/**
+ * Interactivity for prompts whose UI goes to stderr (so stdout can carry data,
+ * e.g. `rig cd`'s resolved path under the shell wrapper's `$(...)`).
+ */
+export function isInteractiveErr(): boolean {
+  return Boolean(process.stderr.isTTY && process.stdin.isTTY)
 }
 
 export interface Choice<T> {
@@ -24,6 +33,7 @@ export async function selectFrom<T>(
   message: string,
   choices: Choice<T>[],
   initialValue?: T,
+  opts: { output?: Writable } = {},
 ): Promise<T | null> {
   clack.settings.aliases.set('backspace', 'cancel')
   try {
@@ -32,6 +42,7 @@ export async function selectFrom<T>(
       options: choices as never,
       initialValue: initialValue as never,
       maxItems: 14,
+      output: opts.output,
     })
     if (clack.isCancel(result)) return null
     return result as T

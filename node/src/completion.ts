@@ -33,7 +33,19 @@ _rig() {
   suggestions=(\${(f)"$(rig "[suggest:\${#cl}]" "$cl" 2>/dev/null | grep -vE '^(-\\?|-h|/\\?|/h)$')"})
   compadd -a suggestions
 }
-compdef _rig rig rignode rigdotnet`
+compdef _rig rig rignode rigdotnet
+
+# \`rig cd\` integration. A subprocess can't change the parent shell's directory,
+# so wrap rig: \`rig cd [query]\` prints a package dir (its menu goes to stderr)
+# and we cd to it. Non-cd calls pass straight through to the binary.
+rig() {
+  if [ "$1" = cd ]; then
+    local __rig_dir
+    __rig_dir="$(command rig "$@")" && [ -n "$__rig_dir" ] && builtin cd -- "$__rig_dir"
+  else
+    command rig "$@"
+  fi
+}`
 
 const BASH = `# rig bash completion. Add this line to ~/.bashrc (don't paste this script):
 #     eval "$(rig completion bash)"
@@ -42,7 +54,17 @@ _rig() {
   local IFS=$'\\n'
   COMPREPLY=( $(compgen -W "$(rig "[suggest:\${COMP_POINT}]" "\${COMP_LINE}" 2>/dev/null | grep -vE '^(-\\?|-h|/\\?|/h)$')" -- "\${COMP_WORDS[COMP_CWORD]}") )
 }
-complete -F _rig rig rignode rigdotnet`
+complete -F _rig rig rignode rigdotnet
+
+# \`rig cd\` integration — wrap rig so \`rig cd [query]\` can change the directory.
+rig() {
+  if [ "$1" = cd ]; then
+    local __rig_dir
+    __rig_dir="$(command rig "$@")" && [ -n "$__rig_dir" ] && builtin cd -- "$__rig_dir"
+  else
+    command rig "$@"
+  fi
+}`
 
 const PWSH = `# rig PowerShell completion. Add this line to $PROFILE (don't paste this script):
 #     Invoke-Expression (& rig completion pwsh | Out-String)
@@ -54,6 +76,20 @@ Register-ArgumentCompleter -Native -CommandName rig,rignode,rigdotnet -ScriptBlo
     ForEach-Object {
       [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
     }
+}
+
+# \`rig cd\` integration — wrap rig so \`rig cd [query]\` can change the directory.
+# (The native completer above targets the rig executable; with this function in
+# place, tab-completion still works via rignode/rigdotnet.)
+function rig {
+  $exe = Get-Command -CommandType Application rig -ErrorAction SilentlyContinue | Select-Object -First 1
+  if (-not $exe) { return }
+  if ($args.Count -gt 0 -and $args[0] -eq 'cd') {
+    $dir = & $exe.Source @args
+    if ($LASTEXITCODE -eq 0 -and $dir) { Set-Location -LiteralPath $dir }
+  } else {
+    & $exe.Source @args
+  }
 }`
 
 /** Print the completion script for `shell`, or usage instructions if none given. */

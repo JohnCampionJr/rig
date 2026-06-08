@@ -10,6 +10,7 @@ import { setDefault } from './verbs/default.js'
 import { add, clean, install, outdated, rebuild } from './verbs/maintenance.js'
 import { doctor } from './verbs/doctor.js'
 import { coverage } from './verbs/coverage.js'
+import { cd } from './verbs/cd.js'
 import { setup } from './verbs/setup.js'
 import { update } from './verbs/update.js'
 import { printCompletion } from './completion.js'
@@ -218,6 +219,12 @@ function standaloneCommands(session: Session) {
     args: { ...globalArgs },
     run: async (ctx: GunshiCtx) => setCode(printCompletion(ctx.positionals[1])),
   })
+  const cdCmd = define({
+    name: 'cd',
+    description: 'Print a package directory to cd into (needs the rig shell wrapper)',
+    args: { ...globalArgs },
+    run: async (ctx: GunshiCtx) => setCode(await cd(session, ctx.positionals[1])),
+  })
   return {
     info: infoCmd,
     doctor: doctorCmd,
@@ -228,6 +235,7 @@ function standaloneCommands(session: Session) {
     default: defaultCmd,
     kill: killCmd,
     completion: completionCmd,
+    cd: cdCmd,
   }
 }
 
@@ -276,7 +284,7 @@ function maintenanceCommands(session: Session) {
  */
 export function verbNames(session: Session): string[] {
   const devLoop = applicableDevLoopVerbs(session).map((v) => v.name)
-  const standalone = ['info', 'doctor', 'coverage', 'init', 'setup', 'update', 'default', 'kill', 'completion', 'install', 'outdated', 'clean', 'rebuild', 'add']
+  const standalone = ['info', 'doctor', 'coverage', 'init', 'setup', 'update', 'default', 'kill', 'completion', 'cd', 'install', 'outdated', 'clean', 'rebuild', 'add']
   const devLoopScriptNames = new Set(DEV_LOOP_VERBS.flatMap((v) => v.scripts))
   const scripts = allScriptNames(session.workspace).filter((n) => !devLoopScriptNames.has(n))
   return [...new Set([...devLoop, ...standalone, ...scripts])]

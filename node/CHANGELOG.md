@@ -16,6 +16,12 @@ All notable changes to `@jcamp/rig` (the Node port) are documented here.
   plus the `packageManager` field, corepack, yarn berry, and walking up parents.
 
 ### Added
+- **`rig cd [query]`** — jump to a package directory. With a query, the best
+  fuzzy match (deepest on ties); without one, an interactive picker. Since a
+  subprocess can't change the parent shell's directory, `rig completion`'s shell
+  script now also installs a thin `rig` wrapper that does the `cd` (the command
+  prints the dir to stdout, its menu to stderr). One `eval "$(rig completion
+  zsh)"` enables both completion and `rig cd`.
 - **Monorepo cwd-awareness.** Running rig inside a member package now targets
   that package by default — `rig test` in `packages/web` tests web with no
   picker (the current package beats the configured default; an explicit token
