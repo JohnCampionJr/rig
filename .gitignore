@@ -13,3 +13,6 @@ artifacts/
 
 # NuGet
 *.nupkg
+
+# Node (anywhere — covers examples/ samples; node/ also has its own)
+node_modules/

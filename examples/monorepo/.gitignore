@@ -1,0 +1,4 @@
+# This is a no-install demo (rig reads package.json + config files). If you do
+# `pnpm install` here to actually run things, these are local scratch artifacts.
+node_modules/
+pnpm-lock.yaml
