@@ -11,6 +11,9 @@ artifacts/
 .idea/
 *.user
 
+# macOS
+.DS_Store
+
 # NuGet
 *.nupkg
 

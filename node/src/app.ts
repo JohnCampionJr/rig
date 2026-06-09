@@ -12,6 +12,11 @@ import { ui } from './ui.js'
 // is baked into the bundle / Bun-compiled binary.
 declare const __RIG_VERSION__: string | undefined
 const VERSION = typeof __RIG_VERSION__ === 'string' ? __RIG_VERSION__ : '0.0.0'
+// Tag the ecosystem so `rig --version` makes it obvious which tool answered —
+// the Node rig prints "(node)", the .NET rig "(.NET)". When `rig` delegates to
+// the other tool, that tool prints its own tag, so the line always names the
+// implementation actually running.
+const VERSION_DISPLAY = `${VERSION} (node)`
 
 /**
  * The Node tool's entry. `delegate` is true when invoked as `rig` (hand off to
@@ -54,7 +59,7 @@ export async function run(delegate: boolean, defaultName: string): Promise<void>
 
   await cli(argv, rootCommand(session), {
     name: process.env.RIG_BIN_NAME || defaultName,
-    version: VERSION,
+    version: VERSION_DISPLAY,
     description: 'A convention-first Node dev launcher — less typing, menu-driven, workspace-aware.',
     subCommands: buildSubCommands(session),
     renderHeader: null,

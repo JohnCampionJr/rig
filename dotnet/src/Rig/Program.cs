@@ -70,10 +70,16 @@ static RootCommand BuildRoot(Rig.Capabilities? caps = null)
     root.Options.Add(Cli.Quiet);
     root.Options.Add(Cli.DryRun);
 
-    // System.CommandLine wires `--version` but not a short `-v` — add it.
+    // System.CommandLine wires `--version` but not a short `-v` — add it, and
+    // swap its action so the output is the cleaned, ecosystem-tagged line
+    // ("1.4.0 (.NET)") rather than the bare "1.4.0+<git-sha>" default.
     foreach (var opt in root.Options)
-        if (opt.Name.Contains("version", StringComparison.OrdinalIgnoreCase) && !opt.Aliases.Contains("-v"))
-            opt.Aliases.Add("-v");
+        if (opt.Name.Contains("version", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!opt.Aliases.Contains("-v"))
+                opt.Aliases.Add("-v");
+            opt.Action = new RigVersionAction();
+        }
 
     Command[] builtins =
     [
