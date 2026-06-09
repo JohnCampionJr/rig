@@ -66,7 +66,11 @@ hardcoded Node `publish` verb would be presumptuous and would shadow that user s
 
 ## Remaining work
 
-- **Unify the config format across both tools** — one `.rig.json` filename, shared
-  top-level keys, and tool-specific settings namespaced under `dotnet` / `node`
-  (additive: the .NET tool still reads its legacy top-level keys). _In progress._
 - **Publish `@jcamp/rig`** to npm (publish-ready).
+
+## Done
+
+- **Unified config format across both tools** — one `.rig.json` filename, shared
+  top-level keys, and tool-specific settings namespaced under `dotnet` / `node`
+  (additive: the .NET tool still reads its legacy top-level keys). Both tools and
+  both schema files (`rig.schema.json`, `node/rig.schema.json`) implement it.

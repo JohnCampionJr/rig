@@ -1,82 +1,227 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/JohnCampionJr/rig/main/node/rig.schema.json",
-  "title": "rig config",
-  "description": "Configuration for rig, the convention-first Node dev launcher.",
+  "title": "rig configuration",
+  "description": "Per-repo configuration for rig (.rig.json). Shared keys (the same across the .NET and Node rig) live at the top level; .NET-only settings go under \"dotnet\". Everything is optional; rig is convention-first and falls back to discovery.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
+
     "defaultProject": {
       "type": "string",
-      "description": "Default package for package-scoped verbs when several are runnable."
+      "description": "Project run by `rig run` with no argument."
     },
     "exclude": {
       "type": "array",
-      "description": "Glob patterns (matched against package name or relative path) hiding packages from pickers.",
-      "items": { "type": "string" }
+      "items": { "type": "string" },
+      "description": "Glob patterns (matched on project name or relative path) for projects rig ignores — keeps demos/spikes/benchmarks out of the pickers."
     },
     "quiet": {
       "type": "boolean",
-      "description": "Suppress the `→ command` echo."
+      "description": "Suppress the `→ command` echo (same as passing --quiet)."
     },
     "env": {
       "type": "object",
-      "description": "Environment applied to every spawned command.",
+      "description": "Environment variables applied to every spawned command.",
       "additionalProperties": { "type": "string" }
     },
     "envPresets": {
+      "$ref": "#/$defs/envPresets",
+      "description": "Named env bundles applied by a matching flag (e.g. `rig test --log`)."
+    },
+    "commands": {
       "type": "object",
-      "description": "Named env presets, e.g. test.envPresets.log → `rig test --log`.",
+      "description": "Custom verbs. Each value is a shell string, an argv array, or an object.",
+      "additionalProperties": { "$ref": "#/$defs/command" }
+    },
+    "aliases": {
+      "type": "object",
+      "description": "Verb name → curated short alias, overriding the built-in default (e.g. { \"coverage\": \"c\" }).",
+      "additionalProperties": { "type": "string" }
+    },
+    "kill": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "match": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Command-line substring patterns to terminate (matched against the full process command line: pkill -f on Unix, CIM CommandLine on Windows). Overrides the default 'all runnable projects' sweep."
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Shared coverage options (open/full/min). .NET-only knobs (settings/collector/license) now live under `dotnet.coverage`.",
+      "properties": {
+        "open": {
+          "type": "boolean",
+          "description": "Always open the report after `rig coverage` (same as passing --open)."
+        },
+        "full": {
+          "type": "boolean",
+          "description": "Default to the full multi-file report (same as passing --full)."
+        },
+        "min": {
+          "type": "number",
+          "description": "Default minimum line-coverage % gate (same as --min); the CLI flag overrides."
+        },
+        "settings": {
+          "type": "string",
+          "deprecated": true,
+          "description": "Deprecated: use dotnet.coverage.settings. Coverage runsettings path."
+        },
+        "collector": {
+          "type": "string",
+          "enum": ["auto", "mtp", "xplat"],
+          "deprecated": true,
+          "description": "Deprecated: use dotnet.coverage.collector."
+        },
+        "license": {
+          "type": "string",
+          "deprecated": true,
+          "description": "Deprecated: use dotnet.coverage.license. ReportGenerator Pro key."
+        }
+      }
+    },
+
+    "dotnet": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Settings specific to the .NET rig (ignored by the Node rig).",
+      "properties": {
+        "solution": {
+          "type": "string",
+          "description": "Path to the solution (.slnx/.sln) to use, overriding auto-discovery."
+        },
+        "defaultProject": {
+          "type": "string",
+          "description": "Default project for .NET specifically; overrides the top-level defaultProject."
+        },
+        "test": { "$ref": "#/$defs/dotnetTest" },
+        "coverage": { "$ref": "#/$defs/dotnetCoverage" },
+        "rebuild": { "$ref": "#/$defs/rebuild" },
+        "publish": { "$ref": "#/$defs/publish" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "description": "Reserved for Node-specific settings (ignored by the .NET rig)."
+    },
+
+    "solution": {
+      "type": "string",
+      "deprecated": true,
+      "description": "Deprecated: use dotnet.solution."
+    },
+    "test": {
+      "type": "object",
+      "additionalProperties": false,
+      "deprecated": true,
+      "description": "Deprecated: project → dotnet.test.project; envPresets → top-level envPresets.",
+      "properties": {
+        "project": { "type": "string" },
+        "envPresets": { "$ref": "#/$defs/envPresets" }
+      }
+    },
+    "rebuild": {
+      "$ref": "#/$defs/rebuild",
+      "deprecated": true,
+      "description": "Deprecated: use dotnet.rebuild."
+    },
+    "publish": {
+      "$ref": "#/$defs/publish",
+      "deprecated": true,
+      "description": "Deprecated: use dotnet.publish."
+    }
+  },
+  "$defs": {
+    "envPresets": {
+      "type": "object",
       "additionalProperties": {
         "type": "object",
         "additionalProperties": { "type": "string" }
       }
     },
-    "coverage": {
+    "dotnetTest": {
       "type": "object",
-      "description": "Coverage options.",
       "additionalProperties": false,
       "properties": {
-        "open": { "type": "boolean", "description": "Open the HTML report after running." },
-        "min": { "type": "number", "description": "Fail below this line-coverage percentage." }
-      }
-    },
-    "kill": {
-      "type": "object",
-      "description": "Options for the kill verb.",
-      "additionalProperties": false,
-      "properties": {
-        "match": {
-          "type": "array",
-          "description": "Extra command-line patterns to match when killing.",
-          "items": { "type": "string" }
+        "project": {
+          "type": "string",
+          "description": "Test project path/glob, overriding auto-detection when ambiguous."
         }
       }
     },
-    "commands": {
+    "dotnetCoverage": {
       "type": "object",
-      "description": "Custom verbs (string, argv array, or per-OS variants).",
-      "additionalProperties": {
-        "oneOf": [
-          { "type": "string" },
-          { "type": "array", "items": { "type": "string" } },
-          { "type": "object" }
-        ]
+      "additionalProperties": false,
+      "properties": {
+        "settings": { "type": "string", "description": "Coverage runsettings path." },
+        "collector": {
+          "type": "string",
+          "enum": ["auto", "mtp", "xplat"],
+          "description": "Coverage collection mechanism; 'auto' detects the test runner."
+        },
+        "license": {
+          "type": "string",
+          "description": "ReportGenerator Pro key, forwarded to the REPORTGENERATOR_LICENSE env var."
+        }
       }
     },
-    "aliases": {
+    "rebuild": {
       "type": "object",
-      "description": "Override a verb's short alias.",
-      "additionalProperties": { "type": "string" }
+      "additionalProperties": false,
+      "properties": {
+        "skip": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Paths/globs to skip when nuking bin/obj."
+        }
+      }
     },
-    "dotnet": {
+    "publish": {
       "type": "object",
-      "description": "Settings specific to the .NET rig; ignored by the Node rig."
+      "additionalProperties": false,
+      "properties": {
+        "rid": { "type": "string" },
+        "selfContained": { "type": "boolean" },
+        "singleFile": { "type": "boolean" },
+        "output": { "type": "string", "description": "Output dir; {rid} is substituted." },
+        "configuration": { "type": "string", "description": "Build configuration (default Release); the --configuration flag overrides." }
+      }
     },
-    "node": {
-      "type": "object",
-      "description": "Reserved for Node-specific settings."
+    "commandSpec": {
+      "oneOf": [
+        { "type": "string", "description": "Shell command string." },
+        { "type": "array", "items": { "type": "string" }, "description": "Argv (bypasses the shell)." }
+      ]
+    },
+    "command": {
+      "oneOf": [
+        { "$ref": "#/$defs/commandSpec" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "description": { "type": "string" },
+            "command": { "$ref": "#/$defs/commandSpec" },
+            "os": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "macos": { "$ref": "#/$defs/commandSpec" },
+                "windows": { "$ref": "#/$defs/commandSpec" },
+                "linux": { "$ref": "#/$defs/commandSpec" }
+              }
+            },
+            "env": { "type": "object", "additionalProperties": { "type": "string" } },
+            "cwd": { "type": "string" }
+          }
+        }
+      ]
     }
   }
 }
