@@ -6,6 +6,37 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-08
+
+Versioned in lockstep with the Node [`@jcamp/rig`](node/) 1.4.0 release.
+
+### Added
+- **ni-parity dependency verbs, mirrored in the .NET rig** — `uninstall`
+  (`remove`/`rm`), `dlx` (`x`), `ci` (frozen/clean install), `upgrade` (`-i`
+  interactive), and `global` (`g`) now exist in both tools, mapping onto the
+  same [@antfu/ni](https://github.com/antfu-collective/ni) verbs the Node rig
+  targets so the two stay in step.
+- **`vp`/Vite+ dispatch** (Node rig) — in a Vite+ repo (a `vite-plus` dependency
+  + a resolvable `vp` binary) rig dispatches verbs to `vp` while staying the
+  front-end: `test`/`build`/`lint` → `vp …`, `format` → `vp fmt`,
+  `add`/`uninstall`/`upgrade`/`outdated`/`dlx` → the matching `vp` command — all
+  still flowing through rig's `run()`, so `--dry-run`, `.env`, the `→` echo, and
+  the menu keep working. Convention-first still wins (an explicit `package.json`
+  script beats `vp`); `typecheck`, `global`, and `ci` deliberately stay native.
+  Override detection with `$RIG_VP_TOOL`. See `examples/viteplus`.
+- **Esc / Backspace cancel** in the .NET menu pickers — Esc (and Backspace at the
+  top level) backs out of a picker instead of being swallowed.
+
+### Changed
+- **Self-update verb renamed `update` → `self-update`** (both tools) so it no
+  longer collides with the new `upgrade` dependency verb.
+
+### Fixed
+- **`rig.schema.json` was invalid JSON** — a stray trailing tag left the root
+  schema unparseable; removed it, and `node/rig.schema.json` is now kept in sync
+  with the authoritative root schema (rich `dotnet.*` namespace, deprecated-key
+  annotations) so the two can't drift.
+
 ## [1.3.0] - 2026-06-08
 
 ### Added

@@ -1,5 +1,57 @@
 # Changelog
 
+## 1.4.0
+
+### Minor Changes
+
+- 2039a28: Add @antfu/ni-parity dependency verbs and a parity test suite.
+
+  New verbs map onto ni's: `uninstall` (`remove`/`rm`, ni's `nun`), `dlx` (`x`,
+  ni's `nlx`), `ci` (frozen/clean install, ni's `nci`), `upgrade` (`-i`
+  interactive, ni's `nu`), and `global` (`g`, global install, ni's `ni -g`). These
+  resolve through the same `package-manager-detector` command table ni uses, so
+  they emit byte-identical commands across npm / pnpm / yarn (classic _and_
+  Berry) / bun.
+
+  Fixes three command divergences from ni: `dlx` on classic yarn now uses `npx`
+  (Berry uses `yarn dlx`), `dlx` no longer injects an implicit `npx -y`, and
+  `add -D` on bun uses `-D` instead of `-d`. A new `test/ni-parity.test.ts`
+  asserts rig's generated commands match ni's and pins the few intentional
+  divergences.
+
+  Also renames the self-update verb `update` → `self-update` so it no longer
+  collides with the new `upgrade` dependency verb (renamed in the .NET rig too,
+  keeping the two tools in sync).
+
+- 2039a28: Add [Vite+](https://viteplus.dev) awareness: in a Vite+ repo (a `vite-plus`
+  dependency + the `vp` binary), rig dispatches verbs to `vp` while staying the
+  front-end — `rig test`/`build`/`lint` → `vp test`/`build`/`lint`,
+  `rig format` → `vp fmt`, `rig add`/`uninstall`/`upgrade`/`outdated`/`dlx` →
+  the matching `vp` command — all still flowing through rig's `run()`, so
+  `--dry-run`, `.env`, the `→` echo, and the menu keep working. It's the same
+  idea as the existing `.NET` hand-off, one layer in: rig is the steering wheel,
+  Vite+ is the engine.
+
+  Convention-first still wins: an explicit `package.json` script beats `vp`
+  dispatch. In a monorepo a project token becomes a `vp --filter` (e.g.
+  `rig add lodash web` → `vp add lodash --filter web`) rather than being dropped.
+
+  Deliberately **not** dispatched: `typecheck` (`vp check` also lints+formats, so
+  it's not a pure type-check — stays `tsc`), and `global`/`ci` (vp routes these
+  through the package manager identically to rig's native path). Verbs with no `vp`
+  analog (`kill`, `cd`, `doctor`, `coverage`, …) fall through to native behavior.
+
+  Detection is all-or-nothing on the `vite-plus` dep + a resolvable `vp` (override
+  with `$RIG_VP_TOOL`), resolved once per session. See the new `examples/viteplus`
+  walkthrough.
+
+### Patch Changes
+
+- c8087e7: Fix and sync the config JSON schemas. `node/rig.schema.json` now mirrors the
+  authoritative root `rig.schema.json` (rich `dotnet.*` namespace, deprecated-key
+  annotations) so the two can't drift, and a stray `</content>` tag that left the
+  root `rig.schema.json` as invalid JSON has been removed.
+
 ## [1.3.0] - 2026-06-08
 
 ### Changed

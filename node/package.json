@@ -1,6 +1,6 @@
 {
   "name": "@jcamp/rig",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "A convention-first Node dev launcher — less typing, menu-driven, workspace-aware.",
   "type": "module",
   "bin": {
