@@ -79,8 +79,8 @@ Register-ArgumentCompleter -Native -CommandName rig,rignode,rigdotnet -ScriptBlo
 }
 
 # \`rig cd\` integration — wrap rig so \`rig cd [query]\` can change the directory.
-# (The native completer above targets the rig executable; with this function in
-# place, tab-completion still works via rignode/rigdotnet.)
+# (The native completer above still fires for this function — verified on
+# PowerShell 7 — so \`rig <TAB>\` keeps completing too.)
 function rig {
   $exe = Get-Command -CommandType Application rig -ErrorAction SilentlyContinue | Select-Object -First 1
   if (-not $exe) { return }

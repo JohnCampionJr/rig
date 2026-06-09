@@ -115,7 +115,8 @@ internal static class CompletionSetup
         }
 
         # `rig cd` integration — wrap rig so `rig cd [query]` can change the directory.
-        # (The native completer above targets the rig executable.)
+        # (The native completer above still fires for this function on PowerShell 7,
+        # so `rig <TAB>` keeps completing too.)
         function rig {
           $exe = Get-Command -CommandType Application rig -ErrorAction SilentlyContinue | Select-Object -First 1
           if (-not $exe) { return }
