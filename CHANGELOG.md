@@ -19,6 +19,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   that does the `cd` (the command prints the dir to stdout, its menu/messages to
   stderr). One `eval "$(rig completion zsh)"` enables both completion and `rig cd`.
 
+### Changed
+- **Hide inapplicable verbs** (parity with the Node rig) — the menu and
+  tab-completion now omit `test`/`coverage` when there's no test project and
+  `run`/`publish`/`default` when there's no runnable project. The CLI still gives
+  the clean "No test project found" / "No runnable projects found." message if
+  you name one directly. (Fixes a regression where the unknown-verb nudge
+  intercepted the `[suggest]` completion directive, breaking tab-completion.)
+
 ## [1.2.0] - 2026-06-07
 
 Versioned in lockstep with the Node [`@jcamp/rig`](node/) 1.2.0 release.

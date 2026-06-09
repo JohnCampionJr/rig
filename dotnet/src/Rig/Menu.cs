@@ -35,7 +35,10 @@ internal static class Menu
         var groups = new List<string> { "watch" };
         if (customCommands.Count > 0) groups.Add("commands");      // surface custom config commands
         groups.AddRange(["maintenance", "config", "quit"]);
-        var top = primary.Where(present.Contains).Concat(groups).ToList();
+        // Hide verbs that can't apply here (no test project → no test/coverage,
+        // no runnable → no run/publish), mirroring the Node tool. caps null
+        // (probe failed) keeps everything.
+        var top = primary.Where(present.Contains).Where(v => caps?.Unavailable(v) is null).Concat(groups).ToList();
 
         while (true)
         {
@@ -103,7 +106,7 @@ internal static class Menu
         IReadOnlyList<string> runnable, string? defaultProject)
     {
         var present = root.Subcommands.Select(c => c.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var choices = verbs.Where(present.Contains).Append("back").ToList();
+        var choices = verbs.Where(present.Contains).Where(v => caps?.Unavailable(v) is null).Append("back").ToList();
         while (true)
         {
             var pick = Select(
@@ -190,7 +193,7 @@ internal static class Menu
     // Returns the chosen verb, or null to go back.
     private static string? WatchSubmenu(Capabilities? caps)
     {
-        string[] choices = ["run", "test", "build", "back"];
+        var choices = new[] { "run", "test", "build" }.Where(v => caps?.Unavailable(v) is null).Append("back").ToList();
         while (true)
         {
             var pick = Select(

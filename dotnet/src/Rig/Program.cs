@@ -12,14 +12,18 @@ using Spectre.Console;
 if (Dispatcher.MaybeDelegate(args) is int delegated)
     return delegated;
 
-var root = BuildRoot();
-
 // Split off everything after the first `--` ourselves: those tokens are forwarded
 // verbatim and must never be seen by the parser (otherwise the first one binds to
 // a verb's optional positional, e.g. `rig run -- migrate` → project "migrate").
 var sep = Array.IndexOf(args, "--");
 var head = sep < 0 ? args : args[..sep];
 Cli.PassThrough = sep < 0 ? [] : args[(sep + 1)..];
+
+// Shell completion: build the command tree WITHOUT verbs that can't apply here
+// (no test project → no test/coverage; no runnable → no run/publish), so the
+// generated suggestions are filtered — matching the menu and the Node tool.
+var forCompletion = head.Length > 0 && head[0].StartsWith("[suggest", StringComparison.Ordinal);
+var root = forCompletion ? BuildRoot(CompletionCaps()) : BuildRoot();
 
 var verbs = root.Subcommands.Select(c => c.Name).ToList();
 // `watch`/`w` is a leading modifier (→ --watch on the target verb), then resolve
@@ -28,8 +32,9 @@ var rewritten = PrefixResolver.Resolve(PrefixResolver.ExpandWatch(head), verbs);
 
 // An unknown leading verb gets a friendly nudge (mirroring the Node tool) instead
 // of System.CommandLine's "Unrecognized command or argument" + full help dump.
-// Option-like tokens (`-…`) and bare `rig` fall through to normal parsing / the menu.
-if (rewritten.Length > 0 && rewritten[0].Length > 0 && rewritten[0][0] != '-'
+// Option-like tokens (`-…`), directives (`[suggest]` → `[…]`), and bare `rig`
+// fall through to normal parsing / completion / the menu.
+if (rewritten.Length > 0 && rewritten[0].Length > 0 && rewritten[0][0] != '-' && rewritten[0][0] != '['
     && !root.Subcommands.SelectMany(c => c.Aliases.Prepend(c.Name))
             .Contains(rewritten[0], StringComparer.OrdinalIgnoreCase))
 {
@@ -47,7 +52,18 @@ catch (Exception ex)
     return 1;
 }
 
-static RootCommand BuildRoot()
+// Capabilities for the completion path — permissive on any failure so a hiccup
+// never hides verbs from tab-completion.
+static Rig.Capabilities CompletionCaps()
+{
+    try { return Rig.Capabilities.Probe(RigSession.Load(Directory.GetCurrentDirectory())); }
+    catch { return Rig.Capabilities.All; }
+}
+
+// `caps` non-null (completion path) drops verbs that can't apply here, so the
+// suggestions are filtered; null (normal path) registers them all, keeping the
+// CLI's own clean "no test project found" / "no runnable" messages.
+static RootCommand BuildRoot(Rig.Capabilities? caps = null)
 {
     var root = new RootCommand("rig — a general-purpose .NET dev launcher");
     root.Options.Add(Cli.NoEnv);
@@ -85,7 +101,9 @@ static RootCommand BuildRoot()
         new UpdateCommand(),
         new CompletionCommand(),
     ];
-    foreach (var c in builtins) root.Subcommands.Add(c);
+    foreach (var c in builtins)
+        if (caps?.Unavailable(c.Name) is null) // null caps → keep all
+            root.Subcommands.Add(c);
 
     // Built-in verbs ship curated default aliases (in their constructors). The
     // repo's .rig.json can override any of them and name custom verbs' aliases.

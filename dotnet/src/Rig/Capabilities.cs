@@ -2,11 +2,16 @@ namespace Rig;
 
 /// <summary>
 /// What the current repo supports, used to degrade gracefully: verbs surface a
-/// one-line reason instead of a confusing failure, and the menu greys out rows
-/// that can't apply. <see cref="Unavailable"/> is pure and unit-tested.
+/// one-line reason instead of a confusing failure, and the menu + completion hide
+/// verbs that can't apply (no test project → no test/coverage; no runnable → no
+/// run/publish). <see cref="Unavailable"/> is pure and unit-tested.
 /// </summary>
 internal sealed record Capabilities(bool HasSolution, int RunnableProjects, bool HasTestProject)
 {
+    /// <summary>Everything available — the permissive fallback when probing fails,
+    /// so a transient hiccup never hides verbs.</summary>
+    public static readonly Capabilities All = new(true, 1, true);
+
     public static Capabilities Probe(RigSession session)
     {
         try
@@ -19,7 +24,7 @@ internal sealed record Capabilities(bool HasSolution, int RunnableProjects, bool
         }
         catch
         {
-            return new Capabilities(false, 0, false);
+            return All;
         }
     }
 
