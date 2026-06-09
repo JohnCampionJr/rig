@@ -61,7 +61,7 @@ function detectOrchestrator(root: string): 'turbo' | 'nx' | null {
  */
 export async function discoverWorkspace(root: string, exclude: string[] = []): Promise<Workspace> {
   const rootPkgRaw = readJson(join(root, 'package.json')) ?? {}
-  const pm = await detectPm(root)
+  const { pm, agent } = await detectPm(root)
   const rootPackage = toPackageInfo(root, root, rootPkgRaw)
 
   const globs = workspaceGlobs(root, rootPkgRaw)
@@ -95,6 +95,7 @@ export async function discoverWorkspace(root: string, exclude: string[] = []): P
   return {
     root,
     pm,
+    agent,
     rootPackage,
     packages: [rootPackage, ...filtered],
     isMonorepo: filtered.length > 0,

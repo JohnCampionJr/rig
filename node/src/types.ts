@@ -1,5 +1,7 @@
 /** Shared domain types for rig. */
 
+import type { Agent } from 'package-manager-detector'
+
 export type PackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun'
 
 /** A single package.json in the repo (root package or a workspace member). */
@@ -24,8 +26,14 @@ export interface PackageInfo {
 export interface Workspace {
   /** Absolute repo root (where discovery anchored). */
   root: string
-  /** Detected package manager. */
+  /** Detected package manager (the coarse family — yarn classic and Berry both map to `yarn`). */
   pm: PackageManager
+  /**
+   * The package-manager-detector agent string, e.g. `npm`, `pnpm`, `yarn`,
+   * `yarn@berry`, `bun`. Unlike `pm` this preserves the yarn classic/Berry split,
+   * so it's what we feed `resolveCommand` for exact @antfu/ni command parity.
+   */
+  agent: Agent
   /** Root package.json. */
   rootPackage: PackageInfo
   /** All packages (root + workspace members), root first. */
@@ -99,4 +107,10 @@ export interface Session {
   globalConfigPath: string | null
   /** Path of the repo .rig.json, if it exists (for `info`). */
   repoConfigPath: string | null
+  /**
+   * The resolved Vite+ `vp` binary for this repo, or null when it isn't a Vite+
+   * project (no `vite-plus` dep) or `vp` isn't installed. Resolved once at load
+   * (filesystem/$PATH lookup) so per-verb dispatch is free.
+   */
+  viteplusTool: string | null
 }

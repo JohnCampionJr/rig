@@ -54,6 +54,15 @@ What's already aligned: both have `--dry-run/-n`, `--quiet/-q`, `--no-env`; the 
   .NET `kill` now takes `--port N` (repeatable), and a bare numeric arg (`rig kill 3000`) is
   treated as a port, matching Node. Frees listeners via `lsof` (Unix) / `netstat` (Windows).
   See [KillVerb.cs](dotnet/src/Rig/Verbs/KillVerb.cs); pure PID parsers covered by tests.
+- ✅ ~~**@antfu/ni dependency verbs were Node-only.**~~ Node grew `uninstall` (`remove`/`rm`),
+  `global` (`g`), `dlx` (`x`), `upgrade`, and `ci` for ni parity (commands resolved through
+  `package-manager-detector`). The three with clean `dotnet`-CLI analogues are now mirrored:
+  `uninstall`/`remove`/`rm` → `dotnet remove <proj> package` (symmetric twin of `add`),
+  `global`/`g` → `dotnet tool install --global`, and `dlx`/`x` → `dnx` (the .NET 10 one-off
+  runner). See [DependencyVerbs.cs](dotnet/src/Rig/Verbs/DependencyVerbs.cs). **Kept Node-only**
+  (no native `dotnet` verb, within reason): `upgrade` (`nu` — `dotnet` has no "bump all packages"
+  command; `outdated` covers *listing*) and `ci` (`nci` — frozen restore needs `packages.lock.json`,
+  uncommon in .NET; a `restore --locked` flag could be added later if wanted).
 
 ### Semantic mismatch (kept per-ecosystem, documented)
 - ✅ ~~**`clean`** means different things: .NET `clean` = `dotnet clean` (light); Node `clean` =
@@ -87,8 +96,8 @@ identical `← back` rendering ([Menu.cs](dotnet/src/Rig/Menu.cs),
 - ✅ ~~**Submenu label casing.** .NET capitalizes (`Maintenance ▸`, `Config ▸`); Node
   lowercases.~~ .NET now lowercases every group label (`watch ▸`, `maintenance ▸`, `config ▸`,
   `commands ▸`) to match Node and the verb names.
-- ✅ ~~**Config submenu contents differ** — .NET omits `init`/`update`.~~ Both now show
-  `info · doctor · setup · default · init · update` in the same order.
+- ✅ ~~**Config submenu contents differ** — .NET omits `init`/`self-update`.~~ Both now show
+  `info · doctor · setup · default · init · self-update` in the same order.
 - ✅ ~~**Maintenance contents + `format` placement.**~~ Decision: `format` is a dev-loop verb,
   so it's now **top-level in both** (.NET top: `run · build · test · coverage · format · kill ·
   publish`). Maintenance unifies to `[restore|install] · outdated · clean · rebuild` (the

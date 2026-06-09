@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { cli } from 'gunshi'
-import { ALIASES, buildSubCommands, invalidVerbMessage, rootCommand, verbNames } from './commands.js'
+import { aliasesFor, buildSubCommands, invalidVerbMessage, rootCommand, verbNames } from './commands.js'
 import { findDotnetTool, maybeDelegate, nearestEcosystem } from './delegate.js'
 import { setDryRun } from './exec.js'
 import { peekGlobalFlags, preparse } from './preparse.js'
@@ -41,7 +41,7 @@ export async function run(delegate: boolean, defaultName: string): Promise<void>
   ui.setQuiet(flags.quiet || session.config.quiet === true)
 
   // Expand the leading watch modifier, verb aliases, and unambiguous prefixes.
-  const argv = preparse(rawArgv, verbNames(session), ALIASES)
+  const argv = preparse(rawArgv, verbNames(session), aliasesFor(session))
 
   // Catch an invalid leading verb before gunshi (which would print a terse
   // "Command not found") — a known-but-inapplicable verb gets a why.

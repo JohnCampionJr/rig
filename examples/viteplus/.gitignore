@@ -1,0 +1,4 @@
+# No-install demo (rig reads package.json + the vite-plus dep). If you do
+# `pnpm install` here to run things for real, these are local scratch artifacts.
+node_modules/
+pnpm-lock.yaml

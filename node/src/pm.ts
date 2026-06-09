@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
-import { detect, type AgentName } from 'package-manager-detector'
+import { detect, resolveCommand, type Agent, type AgentName, type ResolvedCommand } from 'package-manager-detector'
 import type { PackageManager } from './types.js'
 
 /**
@@ -11,14 +11,28 @@ export function toPackageManager(name: AgentName | undefined): PackageManager {
   return name === 'pnpm' || name === 'yarn' || name === 'bun' ? name : 'npm'
 }
 
+/** A detected package manager: the coarse `pm` family plus the precise `agent`. */
+export interface PmDetection {
+  pm: PackageManager
+  /** The detector's agent string, preserving the yarn classic/Berry split. */
+  agent: Agent
+}
+
 /**
  * Detect the package manager at or above `cwd`, following @antfu/ni's logic
  * (lockfiles, the `packageManager` field, `pnpm-workspace.yaml`, corepack, …)
  * via the shared `package-manager-detector` library — the same one ni uses.
+ *
+ * Returns both the coarse `pm` (used by most of rig) and the precise `agent`
+ * (e.g. `yarn@berry`) which we hand to `resolveCommand` for exact ni parity.
  */
-export async function detectPm(cwd: string): Promise<PackageManager> {
+export async function detectPm(cwd: string): Promise<PmDetection> {
   const result = await detect({ cwd })
-  return toPackageManager(result?.name)
+  const pm = toPackageManager(result?.name)
+  // Keep `result.agent` only when the detected pm is one rig actually drives
+  // (so deno/unknown collapse to plain `npm` for both fields).
+  const agent: Agent = result && toPackageManager(result.name) === result.name ? result.agent : pm
+  return { pm, agent }
 }
 
 /**
@@ -61,7 +75,8 @@ export function addCmd(
     case 'yarn':
       return { file: 'yarn', args: ['add', ...(dev ? ['-D'] : []), pkg] }
     case 'bun':
-      return { file: 'bun', args: ['add', ...(dev ? ['-d'] : []), pkg] }
+      // `-D` (not `-d`) to match @antfu/ni — bun accepts both, ni uses `-D`.
+      return { file: 'bun', args: ['add', ...(dev ? ['-D'] : []), pkg] }
   }
 }
 
@@ -70,39 +85,52 @@ export function outdatedCmd(pm: PackageManager): { file: string; args: string[] 
   return { file: pm, args: ['outdated'] }
 }
 
-/** Run a one-off package without installing (npx / pnpm dlx / yarn dlx / bunx). */
-export function dlxCmd(
-  pm: PackageManager,
-  pkg: string,
-  args: string[] = [],
-): { file: string; args: string[] } {
-  switch (pm) {
-    case 'npm':
-      return { file: 'npx', args: ['-y', pkg, ...args] }
-    case 'pnpm':
-      return { file: 'pnpm', args: ['dlx', pkg, ...args] }
-    case 'yarn':
-      return { file: 'yarn', args: ['dlx', pkg, ...args] }
-    case 'bun':
-      return { file: 'bunx', args: [pkg, ...args] }
-  }
+/** Shape a package-manager-detector ResolvedCommand into rig's {file, args}. */
+function fromResolved(r: ResolvedCommand | null): { file: string; args: string[] } | null {
+  return r ? { file: r.command, args: [...r.args] } : null
 }
 
-/** Update a global package via the PM (for `rig update`). */
-export function globalAddCmd(
-  pm: PackageManager,
-  pkg: string,
-): { file: string; args: string[] } {
-  switch (pm) {
-    case 'npm':
-      return { file: 'npm', args: ['install', '--global', pkg] }
-    case 'pnpm':
-      return { file: 'pnpm', args: ['add', '--global', pkg] }
-    case 'yarn':
-      return { file: 'yarn', args: ['global', 'add', pkg] }
-    case 'bun':
-      return { file: 'bun', args: ['add', '--global', pkg] }
-  }
+/**
+ * The following four builders delegate to `package-manager-detector`'s
+ * `resolveCommand` — the exact command table @antfu/ni resolves through — so
+ * these commands are byte-identical to ni's, including the yarn classic/Berry
+ * split (classic `execute` → `npx`, Berry → `yarn dlx`). They take an `agent`
+ * (not the coarse `pm`) for that reason, and return null when a pm has no such
+ * command (e.g. npm has no interactive upgrade).
+ */
+
+/** Run a one-off package without installing — ni's `nlx` (npx / pnpm dlx / yarn dlx|npx / bun x). */
+export function executeCmd(agent: Agent, pkg: string, args: string[] = []): { file: string; args: string[] } | null {
+  return fromResolved(resolveCommand(agent, 'execute', [pkg, ...args]))
+}
+
+/** Remove a dependency — ni's `nun` (npm uninstall / pnpm|yarn|bun remove). */
+export function uninstallCmd(agent: Agent, pkg: string): { file: string; args: string[] } | null {
+  return fromResolved(resolveCommand(agent, 'uninstall', [pkg]))
+}
+
+/** Frozen / clean install (CI) — ni's `nci` (npm ci / pnpm i --frozen-lockfile / …). */
+export function frozenCmd(agent: Agent): { file: string; args: string[] } | null {
+  return fromResolved(resolveCommand(agent, 'frozen', []))
+}
+
+/** Upgrade dependencies — ni's `nu` (`-i`/interactive when the pm supports it). */
+export function upgradeCmd(
+  agent: Agent,
+  pkgs: string[] = [],
+  interactive = false,
+): { file: string; args: string[] } | null {
+  return fromResolved(resolveCommand(agent, interactive ? 'upgrade-interactive' : 'upgrade', pkgs))
+}
+
+/**
+ * Global install of a package — ni's `ni -g` (npm i -g / pnpm add -g / yarn
+ * global add / bun add -g). Delegates to `resolveCommand` so it's agent-aware:
+ * a yarn Berry global install routes through npm (`npm i -g`), exactly like ni.
+ * Used by both `rig add -g` and `rig self-update`.
+ */
+export function globalAddCmd(agent: Agent, pkg: string): { file: string; args: string[] } {
+  return fromResolved(resolveCommand(agent, 'global', [pkg])) ?? { file: 'npm', args: ['i', '-g', pkg] }
 }
 
 /**

@@ -1,4 +1,4 @@
-import { ALIASES, verbNames } from './commands.js'
+import { aliasesFor, verbNames } from './commands.js'
 import type { Session } from './types.js'
 
 /**
@@ -34,7 +34,9 @@ export function suggestCompletions(session: Session, line: string): string[] {
   if (completeCount <= 1) {
     // Verb position: available verb names + the aliases that point at them.
     const names = verbNames(session)
-    const aliases = Object.keys(ALIASES).filter((a) => names.includes(ALIASES[a]!))
+    const aliases = Object.entries(aliasesFor(session))
+      .filter(([, target]) => names.includes(target))
+      .map(([alias]) => alias)
     candidates = [...names, ...aliases]
   } else {
     // Argument position: a workspace package — offer full and short names.

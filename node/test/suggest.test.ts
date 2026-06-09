@@ -18,7 +18,7 @@ function fakeSession(
     raw: p.raw ?? {},
   }))
   return {
-    workspace: { root: '/repo', pm: 'pnpm', rootPackage: pkgs[0]!, packages: pkgs, isMonorepo: pkgs.length > 1, orchestrator: null },
+    workspace: { root: '/repo', pm: 'pnpm', agent: 'pnpm', rootPackage: pkgs[0]!, packages: pkgs, isMonorepo: pkgs.length > 1, orchestrator: null },
     config: {},
     env: undefined,
     flags: { dryRun: false, quiet: false, noEnv: false },

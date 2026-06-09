@@ -27,6 +27,11 @@ Legend: ✅ yes · ❌ no · 🔜 planned · ➖ n/a
 | watch | ✅ | ✅ |
 | install / restore | ✅ | ✅ |
 | add package | ✅ | ✅ |
+| uninstall / remove | ✅ | ✅ |
+| global install (`ni -g`) | ✅ (`dotnet tool`) | ✅ |
+| dlx / one-off run (`nlx`) | ✅ (`dnx`) | ✅ |
+| upgrade (`nu`) | ➖ (no native verb) | ✅ |
+| frozen install (`nci`) | ➖ (no native verb) | ✅ |
 | outdated | ✅ | ✅ |
 | clean / rebuild | ✅ | ✅ |
 | publish | ✅ (`dotnet publish`) | ➖ (via script→verb) |
@@ -49,7 +54,7 @@ Legend: ✅ yes · ❌ no · 🔜 planned · ➖ n/a
 | doctor | ✅ | ✅ |
 | self-update | ✅ | ✅ |
 | install method | dotnet tool (NuGet) | npm |
-| unit tests | ✅ (143) | ✅ (74) |
+| unit tests | ✅ (148) | ✅ (131) |
 | published | ✅ | 🔜 (ready) |
 
 **`publish`:** `.NET` has a built-in verb because `dotnet publish` is a canonical framework

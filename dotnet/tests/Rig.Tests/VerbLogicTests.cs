@@ -266,6 +266,41 @@ public sealed class VerbLogicTests
         AddVerb.ResolveTarget([Exe("App")], "nope", null).Error.Should().NotBeNull();
     }
 
+    // ---- ni-parity dependency verbs (RemoveVerb / GlobalVerb / DlxVerb) ----
+
+    [TestMethod]
+    public void Remove_builds_dotnet_remove_package_args()
+    {
+        RemoveVerb.BuildArgs("/repo/App/App.csproj", "Newtonsoft.Json", [])
+            .Should().ContainInConsecutiveOrder("remove", "/repo/App/App.csproj", "package", "Newtonsoft.Json");
+        // RemoveVerb reuses AddVerb.ResolveTarget (covered above) for project selection.
+        RemoveVerb.BuildArgs("/p.csproj", "Pkg", ["--interactive"]).Should().EndWith("--interactive");
+    }
+
+    [TestMethod]
+    public void Global_builds_dotnet_tool_install_global_args()
+    {
+        GlobalVerb.BuildArgs("dotnet-ef", [])
+            .Should().ContainInConsecutiveOrder("tool", "install", "--global", "dotnet-ef");
+        GlobalVerb.BuildArgs("dotnet-ef", ["--version", "9.0.0"]).Should().ContainInConsecutiveOrder("--version", "9.0.0");
+    }
+
+    [TestMethod]
+    public void Dlx_builds_dnx_args_tool_first()
+    {
+        DlxVerb.BuildArgs("dotnetsay", []).Should().ContainSingle().Which.Should().Be("dotnetsay");
+        DlxVerb.BuildArgs("dotnetsay", ["hello", "world"])
+            .Should().ContainInConsecutiveOrder("dotnetsay", "hello", "world");
+    }
+
+    [TestMethod]
+    public void Dlx_dnx_availability_check_does_not_throw()
+    {
+        // Pure PATH probe — result depends on the machine, but it must never throw.
+        var act = () => DlxVerb.DnxAvailable();
+        act.Should().NotThrow();
+    }
+
     // ---- UpdateVerb (version comparison) ----
 
     [TestMethod]

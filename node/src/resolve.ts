@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import { findBin, runScriptCmd } from './pm.js'
 import { displayOf } from './exec.js'
+import { viteplusCommand } from './viteplus.js'
 import type { PackageInfo, Session } from './types.js'
 
 /**
@@ -154,7 +155,7 @@ export interface ResolvedCommand {
   /** What gets echoed before running. */
   display: string
   /** How the command was resolved (for diagnostics). */
-  source: 'script' | 'tool'
+  source: 'script' | 'tool' | 'viteplus'
 }
 
 export type Resolution =
@@ -172,12 +173,30 @@ export function resolveDevLoop(
   pkg: PackageInfo,
   extraArgs: string[] = [],
 ): Resolution {
+  // Convention-first: an explicit package.json script always wins, even in a
+  // Vite+ repo — so a hand-tuned `test` script isn't silently replaced by `vp`.
   const scriptName = resolveScriptName(pkg, verb.scripts)
   if (scriptName) {
     const { file, args } = runScriptCmd(session.workspace.pm, scriptName, extraArgs)
     return {
       ok: true,
       command: { file, args, cwd: pkg.dir, display: withWhere(displayOf(file, args), pkg), source: 'script' },
+    }
+  }
+
+  // No script → in a Vite+ repo, dispatch the verb to `vp` (the engine) but keep
+  // running it through rig (the front-end): `rig test` → `vp test`, dry-run/env intact.
+  const vp = viteplusCommand(session, verb.name, extraArgs)
+  if (vp) {
+    return {
+      ok: true,
+      command: {
+        file: vp.file,
+        args: vp.args,
+        cwd: pkg.dir,
+        display: withWhere(displayOf('vp', vp.args), pkg),
+        source: 'viteplus',
+      },
     }
   }
 
@@ -214,9 +233,11 @@ export function resolveDevLoop(
   return { ok: false, reason: explainUnavailable(verb, pkg.name) }
 }
 
-/** True when the verb can run for this package (script present or a tool applies). */
+/** True when the verb can run for this package (Vite+ provides it, a script is
+ * present, or a tool applies). */
 export function canRunVerb(session: Session, verb: DevLoopVerb, pkg: PackageInfo): boolean {
   if (resolveScriptName(pkg, verb.scripts)) return true
+  if (viteplusCommand(session, verb.name)) return true
   return verb.fallbacks.some((fb) => fallbackApplies(session, fb, pkg))
 }
 
@@ -249,6 +270,8 @@ export function explainUnavailable(verb: DevLoopVerb, subject: string): string {
 export function describeDevLoop(session: Session, verb: DevLoopVerb, pkg: PackageInfo): string | null {
   const scriptName = resolveScriptName(pkg, verb.scripts)
   if (scriptName) return pkg.scripts[scriptName] ?? scriptName
+  const vp = viteplusCommand(session, verb.name)
+  if (vp) return `vp ${vp.args.join(' ')}` // teach the real engine command in the menu
   const fb = verb.fallbacks.find((f) => fallbackApplies(session, f, pkg))
   return fb ? [basename(fb.bin), ...fb.args].join(' ') : null
 }

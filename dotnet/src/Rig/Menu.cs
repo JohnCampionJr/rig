@@ -61,7 +61,7 @@ internal static class Menu
             }
             if (pick == "config")
             {
-                if (Category(root, "config", ["info", "doctor", "setup", "default", "init", "update"], caps, runnable, defaultProject) is { } code) return code;
+                if (Category(root, "config", ["info", "doctor", "setup", "default", "init", "self-update"], caps, runnable, defaultProject) is { } code) return code;
                 continue;
             }
 
@@ -242,7 +242,7 @@ internal static class Menu
         ["setup"] = "set preferences",
         ["default"] = "set the default project",
         ["init"] = "scaffold .rig.json",
-        ["update"] = "update rig itself",
+        ["self-update"] = "update rig itself",
     };
 
     private static string Label(string verb, Capabilities? caps)

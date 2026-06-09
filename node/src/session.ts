@@ -2,6 +2,7 @@ import { loadConfig } from './config.js'
 import { currentPackage, discoverWorkspace } from './discovery.js'
 import { loadDotEnvFiles } from './dotenv.js'
 import { resolveRoot } from './root.js'
+import { resolveViteplusTool } from './viteplus.js'
 import type { Flags, RigConfig, Session } from './types.js'
 
 /**
@@ -43,5 +44,7 @@ export async function loadSession(flags: Flags, cwd: string = process.cwd()): Pr
     flags,
     globalConfigPath,
     repoConfigPath,
+    // Resolve the Vite+ binary once (filesystem/$PATH) — dispatch reads this.
+    viteplusTool: resolveViteplusTool(workspace),
   }
 }

@@ -1,0 +1,6 @@
+#!/bin/sh
+# Stub `vp` for the no-install demo — echoes the command rig dispatched to it, so
+# you can see the hand-off without a real Vite+ install. Point rig at it with
+# RIG_VP_TOOL (see README). The real `vp` is the VoidZero binary; this only proves
+# the dispatch.
+echo "[stub vp] $*"

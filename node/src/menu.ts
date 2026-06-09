@@ -7,7 +7,7 @@ import { info } from './verbs/info.js'
 import { init } from './verbs/init.js'
 import { kill } from './verbs/kill.js'
 import { setDefault } from './verbs/default.js'
-import { clean, install, outdated, rebuild } from './verbs/maintenance.js'
+import { ci, clean, install, outdated, rebuild, upgrade } from './verbs/maintenance.js'
 import { doctor } from './verbs/doctor.js'
 import { canCover, coverage } from './verbs/coverage.js'
 import { setup } from './verbs/setup.js'
@@ -266,6 +266,8 @@ async function watchMenu(session: Session, focus: PackageInfo | null): Promise<n
 async function maintenanceMenu(session: Session): Promise<number | typeof BACK> {
   const choice = await selectFrom<string | typeof BACK>('Maintenance', [
     { value: 'install', label: 'install', hint: `${session.workspace.pm} install` },
+    { value: 'ci', label: 'ci', hint: 'frozen install from the lockfile' },
+    { value: 'upgrade', label: 'upgrade', hint: 'upgrade dependencies' },
     { value: 'outdated', label: 'outdated', hint: 'newer versions' },
     { value: 'clean', label: 'clean', hint: 'remove build outputs' },
     { value: 'rebuild', label: 'rebuild', hint: 'clean + build' },
@@ -274,6 +276,10 @@ async function maintenanceMenu(session: Session): Promise<number | typeof BACK> 
   switch (choice) {
     case 'install':
       return install(session)
+    case 'ci':
+      return ci(session)
+    case 'upgrade':
+      return upgrade(session)
     case 'outdated':
       return outdated(session)
     case 'clean':
@@ -292,7 +298,7 @@ async function configMenu(session: Session): Promise<number | typeof BACK> {
     { value: 'setup', label: 'setup', hint: 'set preferences' },
     { value: 'default', label: 'default', hint: 'set the default package' },
     { value: 'init', label: 'init', hint: 'scaffold .rig.json' },
-    { value: 'update', label: 'update', hint: 'update rig itself' },
+    { value: 'self-update', label: 'self-update', hint: 'update rig itself' },
     { value: BACK, label: '← back' },
   ])
   if (!choice || choice === BACK) return BACK
@@ -307,7 +313,7 @@ async function configMenu(session: Session): Promise<number | typeof BACK> {
       return setDefault(session)
     case 'init':
       return init(session)
-    case 'update':
+    case 'self-update':
       return update(session)
     default:
       return BACK

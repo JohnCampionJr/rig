@@ -12,7 +12,7 @@ const api = mkPkg({ name: 'api', dir: '/repo/packages/api', relDir: 'packages/ap
 
 function session(currentPackage: PackageInfo | null): Session {
   return {
-    workspace: { root: '/repo', pm: 'pnpm', rootPackage: root, packages: [root, web, api], isMonorepo: true, orchestrator: null },
+    workspace: { root: '/repo', pm: 'pnpm', agent: 'pnpm', rootPackage: root, packages: [root, web, api], isMonorepo: true, orchestrator: null },
     currentPackage,
     config: {},
     env: undefined,
@@ -59,7 +59,7 @@ describe('menu buildOptions — focus', () => {
 
   it('a single-package repo has no focus switch or picker', () => {
     const single = {
-      workspace: { root: '/repo', pm: 'pnpm', rootPackage: root, packages: [root], isMonorepo: false, orchestrator: null },
+      workspace: { root: '/repo', pm: 'pnpm', agent: 'pnpm', rootPackage: root, packages: [root], isMonorepo: false, orchestrator: null },
       currentPackage: null,
       config: {},
       env: undefined,

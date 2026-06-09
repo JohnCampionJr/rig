@@ -37,6 +37,9 @@ be inferred.
 | `test [name]` | `t` | Run tests; bare name → fuzzy class match; `~ = !~ !=` filter shorthand; `--log`, `-w`, `-f`, `-c` |
 | `coverage [name]` | `c` | Tests + coverage; in-process HTML report; `--full`, `--open`, `--min` |
 | `add <package>` | — | Add a NuGet package to the default/sole project (`--project` to target; args after `--` forward) |
+| `uninstall <package> [project]` | `remove` / `rm` | Remove a NuGet package from a project (ni's `nun`) |
+| `global <tool>` | `g` | Install a global .NET tool (ni's `ni -g`) |
+| `dlx <tool> [args]` | `x` | Run a tool once without installing it, via `dnx` (ni's `nlx`; needs the .NET 10 SDK) |
 | `outdated` | `od` | List packages with newer versions (`--vulnerable`, `--deprecated`, `--transitive`, `--prerelease`); restores first if needed |
 | `kill [project]` | `k` | Terminate app processes (bare = all runnable; name one to target it; `--dry-run` lists what would die) |
 | `publish [project]` | `pub` | Self-contained `dotnet publish` (`-c`/`-r`/`-o`/`--self-contained`/`--single-file`) |
@@ -46,7 +49,7 @@ be inferred.
 | `doctor` | — | Flag environment problems (SDK vs `global.json`, restore state, layout); non-zero exit on errors |
 | `init` | — | Scaffold a commented `.rig.json` |
 | `setup` | — | Interactive walkthrough — set local/global prefs without hand-editing |
-| `update` | — | Update rig itself to the latest published version (`--check` to only report) |
+| `self-update` | — | Update rig itself to the latest published version (`--check` to only report) |
 | `completion <shell>` | `comp` | Print self-contained shell-completion setup (zsh/bash/pwsh) |
 
 Bare `rig` opens an interactive menu: the everyday verbs up top, the rest under

@@ -7,7 +7,7 @@ import { info } from './verbs/info.js'
 import { init } from './verbs/init.js'
 import { kill } from './verbs/kill.js'
 import { setDefault } from './verbs/default.js'
-import { add, clean, install, outdated, rebuild } from './verbs/maintenance.js'
+import { add, ci, clean, dlx, global, install, outdated, rebuild, uninstall, upgrade } from './verbs/maintenance.js'
 import { doctor } from './verbs/doctor.js'
 import { coverage } from './verbs/coverage.js'
 import { cd } from './verbs/cd.js'
@@ -83,6 +83,23 @@ export const ALIASES: Record<string, string> = {
   inst: 'install',
   restore: 'install', // cross-ecosystem muscle memory: .NET's `restore` → Node's `install`
   c: 'coverage',
+  // Dependency verbs (@antfu/ni parity): remove/rm → uninstall (nun), x → dlx (nlx),
+  // g → global (ni -g).
+  remove: 'uninstall',
+  rm: 'uninstall',
+  x: 'dlx',
+  g: 'global',
+}
+
+/**
+ * Verb aliases for this session: the static {@link ALIASES} plus `check` →
+ * `typecheck` (matching Vite+'s `vp check` / common muscle memory) — but only when
+ * the repo has no `check` script of its own. rig is convention-first, so a user's
+ * `check` script keeps `rig check`; the alias just fills the gap when there isn't one.
+ */
+export function aliasesFor(session: Session): Record<string, string> {
+  if (allScriptNames(session.workspace).includes('check')) return ALIASES
+  return { ...ALIASES, check: 'typecheck' }
 }
 
 function devLoopCommand(session: Session, name: string) {
@@ -189,9 +206,9 @@ function standaloneCommands(session: Session) {
     args: { ...globalArgs },
     run: async () => setCode(await setup(session)),
   })
-  const updateCmd = define({
-    name: 'update',
-    description: 'Update rig to the latest published version',
+  const selfUpdateCmd = define({
+    name: 'self-update',
+    description: 'Update rig itself to the latest published version',
     args: { ...globalArgs, check: { type: 'boolean', description: 'only report, do not update' } },
     run: async (ctx: GunshiCtx) => setCode(await update(session, { check: Boolean(ctx.values.check) })),
   })
@@ -231,7 +248,7 @@ function standaloneCommands(session: Session) {
     coverage: coverageCmd,
     init: initCmd,
     setup: setupCmd,
-    update: updateCmd,
+    'self-update': selfUpdateCmd,
     default: defaultCmd,
     kill: killCmd,
     completion: completionCmd,
@@ -273,7 +290,51 @@ function maintenanceCommands(session: Session) {
         await add(session, ctx.positionals[1], { dev: Boolean(ctx.values.dev), token: ctx.positionals[2] }),
       ),
   })
-  return { install: installCmd, outdated: outdatedCmd, clean: cleanCmd, rebuild: rebuildCmd, add: addCmd }
+  const globalCmd = define({
+    name: 'global',
+    description: 'Install a package globally (ni -g)',
+    args: { ...globalArgs },
+    run: async (ctx: GunshiCtx) => setCode(await global(session, ctx.positionals[1])),
+  })
+  const uninstallCmd = define({
+    name: 'uninstall',
+    description: 'Remove a dependency from a package',
+    args: { ...globalArgs },
+    run: async (ctx: GunshiCtx) =>
+      setCode(await uninstall(session, ctx.positionals[1], { token: ctx.positionals[2] })),
+  })
+  const dlxCmd = define({
+    name: 'dlx',
+    description: 'Run a one-off package without installing (npx / dlx / bun x)',
+    args: { ...globalArgs },
+    run: async (ctx: GunshiCtx) =>
+      setCode(await dlx(session, ctx.positionals[1], [...ctx.positionals.slice(2), ...ctx.rest])),
+  })
+  const ciCmd = define({
+    name: 'ci',
+    description: 'Frozen / clean install from the lockfile',
+    args: { ...globalArgs },
+    run: async () => setCode(await ci(session)),
+  })
+  const upgradeCmd = define({
+    name: 'upgrade',
+    description: 'Upgrade dependencies to newer versions',
+    args: { ...globalArgs, interactive: { type: 'boolean', short: 'i', description: 'pick upgrades interactively (where supported)' } },
+    run: async (ctx: GunshiCtx) =>
+      setCode(await upgrade(session, ctx.positionals.slice(1), { interactive: Boolean(ctx.values.interactive) })),
+  })
+  return {
+    install: installCmd,
+    outdated: outdatedCmd,
+    clean: cleanCmd,
+    rebuild: rebuildCmd,
+    add: addCmd,
+    global: globalCmd,
+    uninstall: uninstallCmd,
+    dlx: dlxCmd,
+    ci: ciCmd,
+    upgrade: upgradeCmd,
+  }
 }
 
 /**
@@ -284,7 +345,7 @@ function maintenanceCommands(session: Session) {
  */
 export function verbNames(session: Session): string[] {
   const devLoop = applicableDevLoopVerbs(session).map((v) => v.name)
-  const standalone = ['info', 'doctor', 'coverage', 'init', 'setup', 'update', 'default', 'kill', 'completion', 'cd', 'install', 'outdated', 'clean', 'rebuild', 'add']
+  const standalone = ['info', 'doctor', 'coverage', 'init', 'setup', 'self-update', 'default', 'kill', 'completion', 'cd', 'install', 'outdated', 'clean', 'rebuild', 'add', 'global', 'uninstall', 'dlx', 'ci', 'upgrade']
   const devLoopScriptNames = new Set(DEV_LOOP_VERBS.flatMap((v) => v.scripts))
   const scripts = allScriptNames(session.workspace).filter((n) => !devLoopScriptNames.has(n))
   return [...new Set([...devLoop, ...standalone, ...scripts])]

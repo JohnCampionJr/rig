@@ -66,6 +66,6 @@ export async function update(session: Session, opts: { check?: boolean } = {}): 
   ui.info(`update available: ${current} → ${latest}`)
   if (opts.check) return 0
 
-  const { file, args } = globalAddCmd(session.workspace.pm, `${PACKAGE}@latest`)
+  const { file, args } = globalAddCmd(session.workspace.agent, `${PACKAGE}@latest`)
   return run(file, args, { env: session.env })
 }

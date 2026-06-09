@@ -246,6 +246,60 @@ internal sealed class AddCommand : Command
     }
 }
 
+internal sealed class RemoveCommand : Command
+{
+    private readonly Argument<string?> _package =
+        new("package") { Arity = ArgumentArity.ZeroOrOne, HelpName = "package", Description = "NuGet package id to remove" };
+    private readonly Argument<string?> _project =
+        new("project") { Arity = ArgumentArity.ZeroOrOne, HelpName = "project", Description = "Project to remove from (defaults to defaultProject / the sole project)" };
+    private readonly Option<string?> _projectOption =
+        new("--project", "-p") { Description = "Project to remove from (alias of the positional; back-compat)" };
+
+    // Primary name `uninstall` matches the Node tool; `remove`/`rm` are aliases.
+    public RemoveCommand() : base("uninstall", "Remove a NuGet package from a project (ni's nun)")
+    {
+        Aliases.Add("remove");
+        Aliases.Add("rm");
+        TreatUnmatchedTokensAsErrors = false;
+        _project.CompletionSources.Add(_ => Completions.RunnableProjects());
+        _projectOption.CompletionSources.Add(_ => Completions.RunnableProjects());
+        Arguments.Add(_package);
+        Arguments.Add(_project);
+        Options.Add(_projectOption);
+        SetAction(pr => RemoveVerb.Execute(
+            Cli.Session(pr), pr.GetValue(_package),
+            pr.GetValue(_projectOption) ?? pr.GetValue(_project), Cli.Forwarded(pr)));
+    }
+}
+
+internal sealed class GlobalCommand : Command
+{
+    private readonly Argument<string?> _tool =
+        new("tool") { Arity = ArgumentArity.ZeroOrOne, HelpName = "tool", Description = "Global .NET tool to install" };
+
+    public GlobalCommand() : base("global", "Install a global .NET tool (ni's ni -g; args after -- forward)")
+    {
+        Aliases.Add("g");
+        TreatUnmatchedTokensAsErrors = false;
+        Arguments.Add(_tool);
+        SetAction(pr => GlobalVerb.Execute(Cli.Session(pr), pr.GetValue(_tool), Cli.Forwarded(pr)));
+    }
+}
+
+internal sealed class DlxCommand : Command
+{
+    private readonly Argument<string?> _tool =
+        new("tool") { Arity = ArgumentArity.ZeroOrOne, HelpName = "tool", Description = "Tool to run once via dnx (needs the .NET 10 SDK)" };
+
+    public DlxCommand() : base("dlx", "Run a tool once without installing it, via dnx (ni's nlx)")
+    {
+        Aliases.Add("x");
+        TreatUnmatchedTokensAsErrors = false;
+        Arguments.Add(_tool);
+        SetAction(pr => DlxVerb.Execute(Cli.Session(pr), pr.GetValue(_tool), Cli.Forwarded(pr)));
+    }
+}
+
 internal sealed class DefaultCommand : Command
 {
     private readonly Argument<string?> _project =
@@ -310,7 +364,7 @@ internal sealed class UpdateCommand : Command
 {
     private readonly Option<bool> _check = new("--check") { Description = "Only report whether a newer rig is available; don't install" };
 
-    public UpdateCommand() : base("update", "Update rig itself to the latest published version")
+    public UpdateCommand() : base("self-update", "Update rig itself to the latest published version")
     {
         Options.Add(_check);
         SetAction(pr => UpdateVerb.Execute(Cli.Session(pr), pr.GetValue(_check)));

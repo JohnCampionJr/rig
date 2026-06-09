@@ -4,7 +4,7 @@ import { currentPackage } from '../src/discovery.js'
 import { resolveCdTarget } from '../src/verbs/cd.js'
 import { resolveTarget } from '../src/target.js'
 import { buildKillPatterns, parsePids } from '../src/verbs/kill.js'
-import { addCmd, dlxCmd, runScriptCmd, toPackageManager } from '../src/pm.js'
+import { addCmd, executeCmd, runScriptCmd, toPackageManager } from '../src/pm.js'
 import { CLEAN_DIRS, cleanCandidates } from '../src/verbs/maintenance.js'
 import { parseLinePct } from '../src/verbs/coverage.js'
 import { compareVersions, isNewer } from '../src/verbs/update.js'
@@ -43,13 +43,14 @@ describe('resolveVerb', () => {
 
 function session(over: Partial<Session> = {}): Session {
   return {
-    workspace: { root: '/repo', pm: 'pnpm', rootPackage: PKGS[0]!, packages: PKGS, isMonorepo: true, orchestrator: null },
+    workspace: { root: '/repo', pm: 'pnpm', agent: 'pnpm', rootPackage: PKGS[0]!, packages: PKGS, isMonorepo: true, orchestrator: null },
     currentPackage: null,
     config: {},
     env: undefined,
     flags: { dryRun: false, quiet: false, noEnv: false, root: false },
     globalConfigPath: null,
     repoConfigPath: null,
+    viteplusTool: null,
     ...over,
   }
 }
@@ -173,9 +174,9 @@ describe('pm command builders', () => {
     expect(addCmd('pnpm', 'vitest', true)).toEqual({ file: 'pnpm', args: ['add', '-D', 'vitest'] })
     expect(addCmd('npm', 'vitest', false)).toEqual({ file: 'npm', args: ['install', '--save', 'vitest'] })
   })
-  it('dlxCmd per pm', () => {
-    expect(dlxCmd('bun', 'cowsay', ['hi'])).toEqual({ file: 'bunx', args: ['cowsay', 'hi'] })
-    expect(dlxCmd('pnpm', 'cowsay')).toEqual({ file: 'pnpm', args: ['dlx', 'cowsay'] })
+  it('executeCmd per agent (ni-parity table; full coverage in ni-parity.test.ts)', () => {
+    expect(executeCmd('bun', 'cowsay', ['hi'])).toEqual({ file: 'bun', args: ['x', 'cowsay', 'hi'] })
+    expect(executeCmd('pnpm', 'cowsay')).toEqual({ file: 'pnpm', args: ['dlx', 'cowsay'] })
   })
 })
 
