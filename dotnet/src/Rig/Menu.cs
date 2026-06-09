@@ -8,6 +8,11 @@ namespace Rig;
 /// parser (single dispatch path), so the menu never duplicates verb logic.</summary>
 internal static class Menu
 {
+    // Show a selection prompt the user can also dismiss with Esc/Backspace.
+    // Returns null when dismissed; callers map that to quit (top level) or back.
+    private static string? Select(SelectionPrompt<string> prompt) =>
+        CancelKeyPrompt.TryShow(prompt, out var choice) ? choice : null;
+
     public static int Run(RootCommand root)
     {
         // Menu-driven invocations build their own arg lists — never inherit any
@@ -34,14 +39,15 @@ internal static class Menu
 
         while (true)
         {
-            var pick = AnsiConsole.Prompt(
+            var pick = Select(
                 new SelectionPrompt<string>()
                     .Title("What would you like to do?")
                     .PageSize(20)
                     .UseConverter(v => Label(v, caps))
                     .AddChoices(top));
 
-            if (pick == "quit") return 0;
+            // Esc/Backspace (null) at the top level quits, like the Node menu.
+            if (pick is null || pick == "quit") return 0;
 
             if (pick == "watch")
             {
@@ -100,14 +106,14 @@ internal static class Menu
         var choices = verbs.Where(present.Contains).Append("back").ToList();
         while (true)
         {
-            var pick = AnsiConsole.Prompt(
+            var pick = Select(
                 new SelectionPrompt<string>()
                     .Title($"{title} [grey]▸[/]")
                     .PageSize(20)
                     .UseConverter(v => v == "back" ? "[grey]← back[/]" : Label(v, caps))
                     .AddChoices(choices));
 
-            if (pick == "back") return null;
+            if (pick is null || pick == "back") return null; // Esc/Backspace → back
             if (Dispatch(root, pick, caps, runnable, defaultProject) is { } code) return code;
             // unavailable / backed out of a picker → re-prompt this category
         }
@@ -126,14 +132,14 @@ internal static class Menu
             (string.Equals(p, defaultProject, StringComparison.OrdinalIgnoreCase) ||
              string.Equals(ShortName(p), defaultProject, StringComparison.OrdinalIgnoreCase));
 
-        var pick = AnsiConsole.Prompt(
+        var pick = Select(
             new SelectionPrompt<string>()
                 .Title(title)
                 .PageSize(20)
                 .UseConverter(p => p == back ? "[grey]← back[/]" : IsDefault(p) ? $"{p} [grey](default)[/]" : p)
                 .AddChoices([.. projects, back]));
 
-        return pick == back ? null : pick;
+        return pick is null || pick == back ? null : pick; // Esc/Backspace → back
     }
 
     // Kill's sub-menu: every runnable project (bare `rig kill`) or one specific
@@ -150,7 +156,7 @@ internal static class Menu
             (string.Equals(p, defaultProject, StringComparison.OrdinalIgnoreCase) ||
              string.Equals(ShortName(p), defaultProject, StringComparison.OrdinalIgnoreCase));
 
-        var pick = AnsiConsole.Prompt(
+        var pick = Select(
             new SelectionPrompt<string>()
                 .Title("Kill which? [grey](terminates matching processes)[/]")
                 .PageSize(20)
@@ -159,7 +165,8 @@ internal static class Menu
                     : IsDefault(p) ? $"{p} [grey](default)[/]" : p)
                 .AddChoices([all, .. projects, back]));
 
-        return pick == back ? null : pick == all ? ["kill"] : ["kill", pick];
+        // Esc/Backspace (null) → back, same as the explicit "← back" row.
+        return pick is null || pick == back ? null : pick == all ? ["kill"] : ["kill", pick];
     }
 
     private static string ShortName(string name) =>
@@ -186,13 +193,13 @@ internal static class Menu
         string[] choices = ["run", "test", "build", "back"];
         while (true)
         {
-            var pick = AnsiConsole.Prompt(
+            var pick = Select(
                 new SelectionPrompt<string>()
                     .Title("Watch which? [grey](dotnet watch — re-runs on change)[/]")
                     .UseConverter(v => v == "back" ? "[grey]← back[/]" : Label(v, caps))
                     .AddChoices(choices));
 
-            if (pick == "back") return null;
+            if (pick is null || pick == "back") return null; // Esc/Backspace → back
 
             var reason = caps?.Unavailable(pick);
             if (reason is not null)

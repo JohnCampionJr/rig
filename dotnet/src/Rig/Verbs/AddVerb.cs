@@ -69,10 +69,14 @@ internal static class AddVerb
                 foreach (var p in resolution.Ambiguous) Ui.Info($"  • {p.Name}");
                 return 1;
             }
-            target = AnsiConsole.Prompt(new SelectionPrompt<ProjectInfo>()
-                .Title($"Add [aqua]{Markup.Escape(package)}[/] to which project?")
-                .UseConverter(p => p.Name)
-                .AddChoices(resolution.Ambiguous));
+            // Esc/Backspace dismisses the picker → abort the add (parity with the
+            // Node menu's cancel keys; Node's `add` returns 1 when backed out).
+            if (!CancelKeyPrompt.TryShow(new SelectionPrompt<ProjectInfo>()
+                    .Title($"Add [aqua]{Markup.Escape(package)}[/] to which project?")
+                    .UseConverter(p => p.Name)
+                    .AddChoices(resolution.Ambiguous), out var picked))
+                return 1;
+            target = picked;
         }
 
         var args = new List<string> { "add", target.FullPath, "package", package };
