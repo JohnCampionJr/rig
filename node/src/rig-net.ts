@@ -1,4 +1,4 @@
-// rigdotnet — the force-.NET escape hatch. Hands off to the .NET rig tool from
+// rig-net — the force-.NET escape hatch. Hands off to the .NET rig tool from
 // anywhere (even inside a Node directory). Shipped by the Node package because
 // you only need this differentiator when both tools are installed — and if you
 // have both, you have this package.
@@ -7,7 +7,7 @@ import { findDotnetTool } from './delegate.js'
 
 const tool = findDotnetTool()
 if (!tool) {
-  process.stderr.write('rigdotnet: the .NET rig is not installed.\n  dotnet tool install --global rig\n')
+  process.stderr.write('rig-net: the .NET rig is not installed.\n  dotnet tool install --global rig\n')
   process.exit(1)
 }
 

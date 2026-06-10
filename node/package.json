@@ -5,8 +5,8 @@
   "type": "module",
   "bin": {
     "rig": "./dist/cli.js",
-    "rignode": "./dist/rignode.js",
-    "rigdotnet": "./dist/rigdotnet.js"
+    "rig-node": "./dist/rig-node.js",
+    "rig-net": "./dist/rig-net.js"
   },
   "files": [
     "dist",

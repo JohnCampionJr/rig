@@ -20,7 +20,7 @@ const VERSION_DISPLAY = `${VERSION} (node)`
 
 /**
  * The Node tool's entry. `delegate` is true when invoked as `rig` (hand off to
- * the .NET tool in a .NET directory) and false when invoked as `rignode` (the
+ * the .NET tool in a .NET directory) and false when invoked as `rig-node` (the
  * force-Node escape hatch — always run Node). `defaultName` is the program name
  * shown in --help/completion.
  */
@@ -35,7 +35,7 @@ export async function run(delegate: boolean, defaultName: string): Promise<void>
   }
 
   // As `rig`, hand off to the .NET tool when this is a .NET project. As
-  // `rignode`, skip this entirely.
+  // `rig-node`, skip this entirely.
   if (delegate) maybeDelegate(rawArgv)
 
   // Global flags are needed before the session (env depends on --no-env).

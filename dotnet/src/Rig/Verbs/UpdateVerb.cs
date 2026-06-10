@@ -14,7 +14,7 @@ namespace Rig;
 /// <see cref="LatestStable"/> / <see cref="IsNewer"/>.
 ///
 /// The two tools ship in lockstep, so by default this also updates the sibling
-/// Node tool (<c>rignode</c>) when it's installed — handed off with
+/// Node tool (<c>rig-node</c>) when it's installed — handed off with
 /// <c>--self-only</c> (see <see cref="SiblingArgs"/>) so it can't bounce back.
 /// <c>--self-only</c> updates just this ecosystem.
 /// </summary>
@@ -45,7 +45,7 @@ internal static class UpdateVerb
         var tool = Dispatcher.FindNodeTool();
         if (tool is null)
         {
-            Ui.Info("Node rig (rignode) isn't installed — nothing else to update.");
+            Ui.Info("Node rig (rig-node) isn't installed — nothing else to update.");
             return 0;
         }
 

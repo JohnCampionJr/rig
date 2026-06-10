@@ -4,6 +4,15 @@ All notable changes to **rig** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Escape-hatch bins renamed `rignode` → `rig-node` and `rigdotnet` → `rig-net`**
+  (Node package). The delegate-aware `rig` command is unchanged; only the explicit
+  force-an-ecosystem entry points were renamed for consistency. The .NET rig still
+  finds the Node tool by the new `rig-node` name, with `rignode` kept as a
+  transitional fallback so a not-yet-updated Node tool keeps delegating.
+
 ## [1.5.0] - 2026-06-10
 
 Versioned in lockstep with the Node [`@jcamp/rig`](node/) 1.5.0 release.

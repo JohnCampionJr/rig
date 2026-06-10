@@ -23,10 +23,10 @@ Use whichever you have:
 
 ```sh
 rig <verb>                       # if @jcamp/rig is installed globally
-bun /path/to/rig/node/src/rignode.ts <verb>   # straight from source
+bun /path/to/rig/node/src/rig-node.ts <verb>   # straight from source
 ```
 
-(The repo's dev shim aliases `rig`/`rignode` to the source, so `rig` just works.)
+(The repo's dev shim aliases `rig`/`rig-node` to the source, so `rig` just works.)
 
 ## A guided tour
 
