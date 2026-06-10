@@ -107,15 +107,20 @@ public static class Dispatcher
 
         if (isCmd)
         {
-            psi = new ProcessStartInfo("cmd.exe") { UseShellExecute = false };
-            psi.ArgumentList.Add("/c");
-            psi.ArgumentList.Add(path);
+            // A .cmd/.bat shim needs cmd.exe. Use the absolute cmd.exe (no cwd
+            // hijack) and a fully caret-escaped argument string so a forwarded arg
+            // can't break out and inject — cmd re-parses the line before the shim.
+            psi = new ProcessStartInfo(Exec.ComSpec())
+            {
+                UseShellExecute = false,
+                Arguments = Exec.WinCmdArguments(path, args),
+            };
         }
         else
         {
             psi = new ProcessStartInfo(path) { UseShellExecute = false };
+            foreach (var arg in args) psi.ArgumentList.Add(arg);
         }
-        foreach (var arg in args) psi.ArgumentList.Add(arg);
         psi.Environment["RIG_NO_DELEGATE"] = "1";
 
         using var process = Process.Start(psi)!;
