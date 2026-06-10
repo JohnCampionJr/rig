@@ -34,6 +34,20 @@ export function displayOf(file: string, args: string[]): string {
 const CMD_META = /([()[\]%!^"`<>&|;, *?])/g
 
 /**
+ * Absolute path to cmd.exe (from %ComSpec%). Spawning a bare `cmd.exe` lets
+ * Windows search the *current directory* first, so a hostile repo could plant a
+ * `cmd.exe` that runs instead of the real one — resolving it to an absolute path
+ * closes that.
+ */
+export function comspec(): string {
+  return (
+    process.env.ComSpec ||
+    process.env.comspec ||
+    `${process.env.SystemRoot || 'C:\\Windows'}\\System32\\cmd.exe`
+  )
+}
+
+/**
  * A safe `cmd.exe` invocation for a Windows `.cmd`/`.bat` shim. Node's
  * `{ shell: true }` joins argv into a command *string* without escaping, so a
  * metacharacter — or a `"` that breaks out of the quoting — in an argument can
@@ -51,7 +65,7 @@ export function winCmdInvocation(file: string, args: string[]): { file: string; 
     return s.replace(CMD_META, '^$1').replace(CMD_META, '^$1')
   }
   const line = [file.replace(CMD_META, '^$1'), ...args.map(escArg)].join(' ')
-  return { file: process.env.comspec || 'cmd.exe', args: ['/d', '/s', '/c', `"${line}"`] }
+  return { file: comspec(), args: ['/d', '/s', '/c', `"${line}"`] }
 }
 
 /**
@@ -96,7 +110,7 @@ export async function runShell(command: string, opts: RunOptions = {}): Promise<
   if (state.dryRun) return 0
 
   const isWindows = process.platform === 'win32'
-  const shell = isWindows ? 'cmd' : '/bin/sh'
+  const shell = isWindows ? comspec() : '/bin/sh'
   const shellArgs = isWindows ? ['/c', command] : ['-c', command]
 
   return new Promise((resolve) => {
@@ -120,7 +134,8 @@ export async function runShell(command: string, opts: RunOptions = {}): Promise<
 /** Open a file/URL with the OS default handler (open / xdg-open / start). */
 export function openPath(target: string): Promise<number> {
   if (process.platform === 'darwin') return run('open', [target], { display: `open ${target}` })
-  if (process.platform === 'win32') return run('cmd', ['/c', 'start', '', target], { display: `open ${target}` })
+  if (process.platform === 'win32')
+    return run(comspec(), ['/c', 'start', '', target], { display: `open ${target}` })
   return run('xdg-open', [target], { display: `open ${target}` })
 }
 

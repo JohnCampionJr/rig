@@ -128,6 +128,21 @@ public sealed class VerbLogicTests
         RebuildVerb.IsWithinRoot(root, Path.Combine(Path.GetTempPath(), "other")).Should().BeFalse();
     }
 
+    // ---- Exec.WinCmdArguments (Windows .cmd delegation hardening) ----
+
+    [TestMethod]
+    public void Win_cmd_arguments_caret_escape_metacharacters()
+    {
+        var line = Exec.WinCmdArguments("rig-node.cmd", ["[suggest:5]", "a & echo pwned"]);
+        line.Should().StartWith("/d /s /c \"");
+        line.Should().Contain("^^^&");        // the ampersand is caret-escaped…
+        line.Should().NotContain(" & echo");  // …so it can't run as its own command
+
+        // Exact escaping must match the Node tool's winCmdInvocation (whose output
+        // is validated against real cmd.exe by a win32 integration test).
+        Exec.WinCmdArguments("x.cmd", ["a&b"]).Should().Be("/d /s /c \"x.cmd ^^^\"a^^^&b^^^\"\"");
+    }
+
     // ---- KillVerb.ResolvePatterns ----
 
     [TestMethod]

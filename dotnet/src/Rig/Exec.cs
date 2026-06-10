@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace Rig;
 
@@ -63,9 +64,39 @@ internal static class Exec
         catch (System.ComponentModel.Win32Exception) { return (-1, string.Empty); }
     }
 
-    /// <summary>The platform shell invocation for a command string.</summary>
+    /// <summary>The platform shell invocation for a command string. On Windows the
+    /// shell is the absolute <see cref="ComSpec"/> so a <c>cmd.exe</c> planted in the
+    /// working directory can't be picked up ahead of the real one.</summary>
     public static (string File, string[] Args) ShellInvocation(string command) =>
-        OperatingSystem.IsWindows() ? ("cmd", ["/c", command]) : ("/bin/sh", ["-c", command]);
+        OperatingSystem.IsWindows() ? (ComSpec(), ["/c", command]) : ("/bin/sh", ["-c", command]);
+
+    /// <summary>Absolute path to <c>cmd.exe</c> (from <c>%ComSpec%</c>, else the
+    /// system dir). Spawning a bare <c>cmd.exe</c> lets Windows search the current
+    /// directory first — resolving it absolutely closes that hijack.</summary>
+    public static string ComSpec() =>
+        Environment.GetEnvironmentVariable("ComSpec") is { Length: > 0 } c
+            ? c
+            : Path.Combine(Environment.SystemDirectory, "cmd.exe");
+
+    private static readonly Regex CmdMeta = new(@"([()\[\]%!^""`<>&|;, *?])", RegexOptions.Compiled);
+
+    /// <summary>The <c>cmd.exe</c> argument string to run a <c>.cmd</c>/<c>.bat</c>
+    /// shim with metacharacter-safe, caret-escaped arguments, so a forwarded arg
+    /// can't break out and inject (cmd re-parses the line before the shim runs).
+    /// Mirrors the Node tool's <c>winCmdInvocation</c>; pure, unit-tested.</summary>
+    public static string WinCmdArguments(string file, IEnumerable<string> args)
+    {
+        static string EscMeta(string s) => CmdMeta.Replace(s, "^$1");
+        static string EscArg(string arg)
+        {
+            var s = Regex.Replace(arg, @"(\\*)""", "$1$1\\\"");
+            s = Regex.Replace(s, @"(\\*)$", "$1$1");
+            s = "\"" + s + "\"";
+            return EscMeta(EscMeta(s)); // double-escape for the .cmd/.bat case
+        }
+        var shellCommand = string.Join(' ', new[] { EscMeta(file) }.Concat(args.Select(EscArg)));
+        return $"/d /s /c \"{shellCommand}\"";
+    }
 
     private static void ApplyEnv(ProcessStartInfo psi, IReadOnlyDictionary<string, string>? env)
     {
@@ -102,7 +133,7 @@ internal static class Exec
     public static void OpenPath(string path)
     {
         if (OperatingSystem.IsWindows())
-            Run("cmd", ["/c", "start", "", path], ".", suppressMissing: true);
+            Run(ComSpec(), ["/c", "start", "", path], ".", suppressMissing: true);
         else if (OperatingSystem.IsMacOS())
             Run("open", [path], ".", suppressMissing: true);
         else

@@ -24,6 +24,17 @@ describe('winCmdInvocation (cmd.exe quoting)', () => {
     const line = winCmdInvocation('x.cmd', ['a" & calc & "b']).args[3]
     expect(line).not.toMatch(/[^\\^]"[^^]/) // every " is backslash- or caret-guarded
   })
+
+  it('routes through the absolute %ComSpec% cmd.exe (no cwd hijack)', () => {
+    const prev = process.env.ComSpec
+    process.env.ComSpec = 'C:\\Windows\\System32\\cmd.exe'
+    try {
+      expect(winCmdInvocation('x.cmd', []).file).toBe('C:\\Windows\\System32\\cmd.exe')
+    } finally {
+      if (prev === undefined) delete process.env.ComSpec
+      else process.env.ComSpec = prev
+    }
+  })
 })
 
 // The real proof — only runs on Windows CI, where cmd.exe is the actual parser.
