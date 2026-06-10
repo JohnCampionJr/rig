@@ -32,18 +32,6 @@ Versioned in lockstep with the Node [`@jcamp/rig`](node/) 1.5.0 release.
   expression (`FullyQualifiedName~…`, `TestCategory=…`) is shared by both runners,
   so `rig test <name>` / `--filter` works identically across them.
 
-### Fixed
-- **`rig test` / `rig coverage` now target the right `dotnet test` CLI per runner
-  (.NET)** — the SDK ships two `dotnet test` parsers and selects between them
-  *solely* by `global.json`'s `test.runner`. On a classic **VSTest** project rig
-  was passing the test project with `--project`, a switch that parser doesn't know;
-  it forwarded the flag to MSBuild and failed with `MSB1001: Unknown switch`. rig
-  now detects the runner ([`TestPlatform`](dotnet/src/Rig/Verbs/TestPlatform.cs))
-  and uses each parser's grammar — positional project for VSTest, `--project` for
-  Microsoft.Testing.Platform — for both `test` and `coverage`. The `--filter`
-  expression (`FullyQualifiedName~…`, `TestCategory=…`) is shared by both runners,
-  so `rig test <name>` / `--filter` works identically across them.
-
 ## [1.4.0] - 2026-06-08
 
 Versioned in lockstep with the Node [`@jcamp/rig`](node/) 1.4.0 release.
