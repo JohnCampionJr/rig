@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { globalAddCmd } from '../pm.js'
-import { run } from '../exec.js'
+import { run, displayOf } from '../exec.js'
+import { findDotnetTool } from '../delegate.js'
 import { ui } from '../ui.js'
 import type { Session } from '../types.js'
 
@@ -50,8 +51,15 @@ async function latestVersion(): Promise<string | null> {
   }
 }
 
-/** `rig update [--check]` — update rig to the latest published version. */
-export async function update(session: Session, opts: { check?: boolean } = {}): Promise<number> {
+/**
+ * Args for handing off to the sibling tool's self-update. Always carries
+ * `--self-only` so the sibling never cross-updates back to us. Pure.
+ */
+export function siblingArgs(check?: boolean): string[] {
+  return check ? ['self-update', '--check', '--self-only'] : ['self-update', '--self-only']
+}
+
+async function updateSelf(session: Session, check?: boolean): Promise<number> {
   const current = currentVersion()
   const latest = await latestVersion()
   if (!latest) {
@@ -64,8 +72,39 @@ export async function update(session: Session, opts: { check?: boolean } = {}): 
   }
 
   ui.info(`update available: ${current} → ${latest}`)
-  if (opts.check) return 0
+  if (check) return 0
 
   const { file, args } = globalAddCmd(session.workspace.agent, `${PACKAGE}@latest`)
   return run(file, args, { env: session.env })
+}
+
+async function updateSibling(session: Session, check?: boolean): Promise<number> {
+  const tool = findDotnetTool()
+  if (!tool) {
+    ui.info("the .NET rig isn't installed — nothing else to update.")
+    return 0
+  }
+  const args = siblingArgs(check)
+  ui.info(check ? 'checking the .NET rig…' : 'updating the .NET rig…')
+  // RIG_NO_DELEGATE so the .NET tool runs natively instead of handing back to us.
+  return run(tool, args, {
+    env: { ...(session.env ?? {}), RIG_NO_DELEGATE: '1' },
+    display: displayOf('rig', args),
+  })
+}
+
+/**
+ * `rig self-update [--check] [--self-only]` — update rig to the latest published
+ * version. The two tools ship in lockstep, so by default this also updates the
+ * sibling .NET rig when it's installed (handed off with `--self-only`, so it
+ * can't bounce back). `--self-only` updates just this ecosystem.
+ */
+export async function update(
+  session: Session,
+  opts: { check?: boolean; selfOnly?: boolean } = {},
+): Promise<number> {
+  const selfCode = await updateSelf(session, opts.check)
+  if (opts.selfOnly) return selfCode
+  const siblingCode = await updateSibling(session, opts.check)
+  return selfCode !== 0 ? selfCode : siblingCode
 }

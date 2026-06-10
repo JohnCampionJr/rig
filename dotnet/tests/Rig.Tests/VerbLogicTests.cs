@@ -336,6 +336,15 @@ public sealed class VerbLogicTests
         UpdateVerb.IsNewer("1.0.0", "garbage").Should().BeFalse();     // unparseable latest → no
     }
 
+    [TestMethod]
+    public void Update_sibling_args_always_carry_self_only()
+    {
+        // The cross-update hands off with --self-only so the sibling never bounces
+        // back and re-updates us (infinite mutual recursion).
+        UpdateVerb.SiblingArgs(check: false).Should().Equal("self-update", "--self-only");
+        UpdateVerb.SiblingArgs(check: true).Should().Equal("self-update", "--check", "--self-only");
+    }
+
     // ---- OutdatedVerb.BuildArgs ----
 
     [TestMethod]

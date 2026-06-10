@@ -7,7 +7,7 @@ import { buildKillPatterns, parsePids } from '../src/verbs/kill.js'
 import { addCmd, executeCmd, runScriptCmd, toPackageManager } from '../src/pm.js'
 import { CLEAN_DIRS, cleanCandidates } from '../src/verbs/maintenance.js'
 import { parseLinePct } from '../src/verbs/coverage.js'
-import { compareVersions, isNewer } from '../src/verbs/update.js'
+import { compareVersions, isNewer, siblingArgs } from '../src/verbs/update.js'
 import { filterPackages, topoSort } from '../src/graph.js'
 import type { PackageInfo, Session } from '../src/types.js'
 
@@ -242,5 +242,9 @@ describe('version compare', () => {
     expect(isNewer('1.0.0', '1.0.1')).toBe(true)
     expect(isNewer('1.0.1', '1.0.1')).toBe(false)
     expect(isNewer('1.0.2', '1.0.1')).toBe(false)
+  })
+  it('siblingArgs always carries --self-only so the cross-update never bounces back', () => {
+    expect(siblingArgs(false)).toEqual(['self-update', '--self-only'])
+    expect(siblingArgs(true)).toEqual(['self-update', '--check', '--self-only'])
   })
 })

@@ -90,6 +90,12 @@ public static class Dispatcher
         return RunTool(tool, args);
     }
 
+    /// <summary>Run an already-located Node tool (e.g. from <see cref="FindNodeTool"/>)
+    /// with <paramref name="args"/>, returning its exit code. Runs with
+    /// <c>RIG_NO_DELEGATE</c> set, so the Node tool executes natively instead of
+    /// handing back to us.</summary>
+    public static int RunNodeTool(string toolPath, string[] args) => RunTool(toolPath, args);
+
     static int RunTool(string path, string[] args)
     {
         ProcessStartInfo psi;
