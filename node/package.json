@@ -24,6 +24,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "build:bin": "pnpm build && node scripts/build-binaries.mjs",
+    "install:rigdev": "bun scripts/install-rigdev.ts",
     "prepublishOnly": "pnpm build",
     "changeset": "changeset",
     "release:version": "changeset version && node scripts/sync-dotnet-version.mjs",
