@@ -10,10 +10,16 @@ import { parseLinePct } from '../src/verbs/coverage.js'
 import { compareVersions, isNewer, siblingArgs } from '../src/verbs/update.js'
 import { filterPackages, topoSort } from '../src/graph.js'
 import type { PackageInfo, Session } from '../src/types.js'
+import { join, sep } from 'node:path'
 
 function pkg(name: string, dir: string, isRoot = false): PackageInfo {
   return { name, dir, relDir: isRoot ? '.' : dir, isRoot, private: false, scripts: {}, raw: {} }
 }
+
+// Build an OS-native path *under* a package dir, keeping the (POSIX-literal) dir
+// itself intact, so currentPackage's `dir + sep` prefix check matches on Windows
+// too — production paths use the OS separator, but these test dirs use `/`.
+const under = (dir: string, ...parts: string[]) => [dir, ...parts].join(sep)
 
 const PKGS = [
   pkg('root', '/repo', true),
@@ -130,7 +136,7 @@ describe('resolveCdTarget', () => {
 
 describe('currentPackage', () => {
   it('finds the deepest member containing cwd', () => {
-    expect(currentPackage(PKGS, '/repo/apps/web/src/x')?.name).toBe('@app/web')
+    expect(currentPackage(PKGS, under('/repo/apps/web', 'src', 'x'))?.name).toBe('@app/web')
     expect(currentPackage(PKGS, '/repo/apps/api')?.name).toBe('@app/api')
   })
   it('is null at the root or in a non-package subdir', () => {
@@ -139,7 +145,7 @@ describe('currentPackage', () => {
   })
   it('does not match a sibling by name prefix', () => {
     const pkgs = [pkg('root', '/repo', true), pkg('@x/web', '/repo/web'), pkg('@x/web2', '/repo/web2')]
-    expect(currentPackage(pkgs, '/repo/web2/src')?.name).toBe('@x/web2')
+    expect(currentPackage(pkgs, under('/repo/web2', 'src'))?.name).toBe('@x/web2')
   })
 })
 
@@ -183,8 +189,8 @@ describe('pm command builders', () => {
 describe('cleanCandidates', () => {
   it('lists every CLEAN_DIR under every package', () => {
     const out = cleanCandidates([PKGS[0]!, PKGS[1]!])
-    expect(out).toContain('/repo/dist')
-    expect(out).toContain('/repo/apps/web/.turbo')
+    expect(out).toContain(join('/repo', 'dist'))
+    expect(out).toContain(join('/repo/apps/web', '.turbo'))
     expect(out.length).toBe(2 * CLEAN_DIRS.length)
   })
 })
