@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.5.0
+
+### Minor Changes
+
+- 94e1e08: `rig --version` (and `-v`) now names which rig answered — the Node tool prints
+  `1.4.0 (node)` and the .NET tool `1.4.0 (.NET)`. Because `rig` delegates across
+  ecosystems, the tag always reflects the implementation actually running, so a
+  stray shim or wrong-ecosystem hand-off is obvious at a glance. The .NET tool
+  also drops the noisy `+<git-sha>` build suffix from its version output.
+
+### Patch Changes
+
+- 2c47b79: **.NET tool:** `rig test` / `rig coverage` now pick the correct `dotnet test`
+  CLI grammar per runner. The SDK chooses between its two `dotnet test` parsers
+  _solely_ by `global.json`'s `test.runner`, but rig always passed the project with
+  `--project` — a switch the classic VSTest parser doesn't know, so it failed with
+  `MSB1001: Unknown switch` on any non-MTP project. rig now detects the runner from
+  `global.json` and uses the positional project form for VSTest and `--project` for
+  Microsoft.Testing.Platform. The `--filter` expression (`FullyQualifiedName~…`) is
+  shared by both runners, so `rig test <name>` / `--filter` works across them.
+
 ## 1.4.0
 
 ### Minor Changes

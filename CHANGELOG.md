@@ -4,7 +4,16 @@ All notable changes to **rig** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.5.0] - 2026-06-10
+
+Versioned in lockstep with the Node [`@jcamp/rig`](node/) 1.5.0 release.
+
+### Changed
+- **`rig --version` (and `-v`) now names which ecosystem answered** — the .NET
+  tool prints `1.5.0 (.NET)` and the Node tool `1.5.0 (node)`. Because `rig`
+  delegates across ecosystems, the tag always reflects the implementation actually
+  running, so a stray shim or wrong-ecosystem hand-off is obvious at a glance. The
+  .NET tool also drops the noisy `+<git-sha>` build suffix from its version output.
 
 ### Fixed
 - **`rig test` / `rig coverage` now target the right `dotnet test` CLI per runner
