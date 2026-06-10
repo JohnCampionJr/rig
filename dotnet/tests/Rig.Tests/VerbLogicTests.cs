@@ -118,6 +118,16 @@ public sealed class VerbLogicTests
         RebuildVerb.IsSkipped("vendored/bin", skip).Should().BeFalse(); // not a path segment
     }
 
+    [TestMethod]
+    public void Rebuild_within_root_guards_the_recursive_delete()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "rigroot");
+        RebuildVerb.IsWithinRoot(root, Path.Combine(root, "src", "App", "bin")).Should().BeTrue();
+        RebuildVerb.IsWithinRoot(root, root).Should().BeFalse();                       // never the root itself
+        RebuildVerb.IsWithinRoot(root, Path.Combine(root, "..", "evil")).Should().BeFalse(); // `..` escape
+        RebuildVerb.IsWithinRoot(root, Path.Combine(Path.GetTempPath(), "other")).Should().BeFalse();
+    }
+
     // ---- KillVerb.ResolvePatterns ----
 
     [TestMethod]

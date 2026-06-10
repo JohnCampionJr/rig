@@ -9,6 +9,17 @@ internal static class RebuildVerb
 {
     private const StringComparison OIC = StringComparison.OrdinalIgnoreCase;
 
+    /// <summary>True when <paramref name="path"/> resolves strictly inside
+    /// <paramref name="root"/> (no <c>..</c> escape, a different drive, or the
+    /// root itself). Pure — guards the recursive delete against a stray target.</summary>
+    public static bool IsWithinRoot(string root, string path)
+    {
+        var rel = Path.GetRelativePath(Path.GetFullPath(root), Path.GetFullPath(path));
+        return rel.Length > 0 && rel != "."
+            && !rel.StartsWith("..", StringComparison.Ordinal)
+            && !Path.IsPathRooted(rel);
+    }
+
     public static bool IsSkipped(string relativeDir, IEnumerable<string> skip)
     {
         var norm = relativeDir.Replace('\\', '/');
@@ -73,7 +84,15 @@ internal static class RebuildVerb
         {
             try
             {
-                if (Directory.Exists(dir)) { Directory.Delete(dir, recursive: true); removed++; }
+                // Data-loss guard: never delete outside the repo, and never follow a
+                // junction/symlink out of it (a stray project path or a reparse-point
+                // bin/obj could otherwise aim the recursive delete elsewhere).
+                if (!IsWithinRoot(session.Root, dir)) { Ui.Warn($"  refusing {dir} — outside the repo"); continue; }
+                var info = new DirectoryInfo(dir);
+                if (!info.Exists) continue;
+                if (info.Attributes.HasFlag(FileAttributes.ReparsePoint)) { Ui.Warn($"  skipping symlink {dir}"); continue; }
+                Directory.Delete(dir, recursive: true);
+                removed++;
             }
             catch (Exception ex)
             {

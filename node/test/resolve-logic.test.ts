@@ -5,7 +5,7 @@ import { resolveCdTarget } from '../src/verbs/cd.js'
 import { resolveTarget } from '../src/target.js'
 import { buildKillPatterns, parsePids } from '../src/verbs/kill.js'
 import { addCmd, executeCmd, runScriptCmd, toPackageManager } from '../src/pm.js'
-import { CLEAN_DIRS, cleanCandidates } from '../src/verbs/maintenance.js'
+import { CLEAN_DIRS, cleanCandidates, isWithinRoot } from '../src/verbs/maintenance.js'
 import { parseLinePct } from '../src/verbs/coverage.js'
 import { compareVersions, isNewer, siblingArgs } from '../src/verbs/update.js'
 import { filterPackages, topoSort } from '../src/graph.js'
@@ -192,6 +192,18 @@ describe('cleanCandidates', () => {
     expect(out).toContain(join('/repo', 'dist'))
     expect(out).toContain(join('/repo/apps/web', '.turbo'))
     expect(out.length).toBe(2 * CLEAN_DIRS.length)
+  })
+})
+
+describe('isWithinRoot (delete guard)', () => {
+  it('accepts a path strictly inside the root', () => {
+    expect(isWithinRoot('/repo', join('/repo', 'dist'))).toBe(true)
+    expect(isWithinRoot('/repo/apps/web', join('/repo/apps/web', '.turbo'))).toBe(true)
+  })
+  it('rejects the root itself and escapes', () => {
+    expect(isWithinRoot('/repo', '/repo')).toBe(false) // never delete the root
+    expect(isWithinRoot('/repo', '/repo/../etc')).toBe(false) // `..` escape
+    expect(isWithinRoot('/repo', '/elsewhere/dist')).toBe(false) // outside
   })
 })
 
