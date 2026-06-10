@@ -27,7 +27,7 @@ export function nearestEcosystem(start: string): 'dotnet' | 'node' | null {
 
 /**
  * Locate the .NET rig tool by its install location — *not* by the name
- * `rigdotnet` (that's our own bin; looking it up on PATH would loop). The .NET
+ * `rig-net` (that's our own bin; looking it up on PATH would loop). The .NET
  * tool installs as `rig` into the dotnet global-tools dir. Override with
  * $RIG_DOTNET_TOOL for non-standard installs.
  */

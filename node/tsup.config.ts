@@ -6,7 +6,7 @@ const { version } = JSON.parse(
 ) as { version: string }
 
 export default defineConfig({
-  entry: ['src/cli.ts', 'src/rignode.ts', 'src/rigdotnet.ts'],
+  entry: ['src/cli.ts', 'src/rig-node.ts', 'src/rig-net.ts'],
   format: ['esm'],
   target: 'node18',
   clean: true,

@@ -27,7 +27,7 @@ What's already aligned: both have `--dry-run/-n`, `--quiet/-q`, `--no-env`; the 
   one. Replaced gunshi's completion plugin (which wasn't emitting candidates here).
 - ✅ ~~**`--version` short form.** .NET adds `-v`; Node only has `--version`.~~
   Already satisfied — gunshi's built-in `version` option declares `short: "v"`, so `rig -v` /
-  `rignode -v` already print the version (verified). The original audit missed this. Note: `-v`
+  `rig-node -v` already print the version (verified). The original audit missed this. Note: `-v`
   is therefore reserved for version in both tools, so a future `--verbose` can't claim it.
 
 ### Flag-surface mismatches

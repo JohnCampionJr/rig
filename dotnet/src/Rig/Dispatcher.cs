@@ -4,7 +4,7 @@ namespace Rig;
 
 /// <summary>
 /// Other-awareness: when the .NET <c>rig</c> is invoked in a Node project, it
-/// hands off to the Node tool (<c>rignode</c>). Mirrors the Node tool's
+/// hands off to the Node tool (<c>rig-node</c>). Mirrors the Node tool's
 /// delegation, so routing works regardless of which <c>rig</c> wins on PATH.
 /// </summary>
 public static class Dispatcher
@@ -34,7 +34,9 @@ public static class Dispatcher
         return null;
     }
 
-    /// <summary>Locate the Node tool by its unique <c>rignode</c> name on PATH.</summary>
+    /// <summary>Locate the Node tool by its unique <c>rig-node</c> name on PATH
+    /// (<c>rignode</c>, the pre-rename name, is still accepted as a fallback so a
+    /// not-yet-updated Node tool keeps working).</summary>
     public static string? FindNodeTool()
     {
         var overridePath = Environment.GetEnvironmentVariable("RIG_NODE_TOOL");
@@ -42,8 +44,8 @@ public static class Dispatcher
             return File.Exists(overridePath) ? overridePath : null;
 
         string[] names = OperatingSystem.IsWindows()
-            ? ["rignode.cmd", "rignode.exe", "rignode"]
-            : ["rignode"];
+            ? ["rig-node.cmd", "rig-node.exe", "rig-node", "rignode.cmd", "rignode.exe", "rignode"]
+            : ["rig-node", "rignode"];
 
         foreach (var dir in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
         {

@@ -33,7 +33,7 @@ _rig() {
   suggestions=(\${(f)"$(rig "[suggest:\${#cl}]" "$cl" 2>/dev/null | grep -vE '^(-\\?|-h|/\\?|/h)$')"})
   compadd -a suggestions
 }
-compdef _rig rig rignode rigdotnet
+compdef _rig rig rig-node rig-net
 
 # \`rig cd\` integration. A subprocess can't change the parent shell's directory,
 # so wrap rig: \`rig cd [query]\` prints a package dir (its menu goes to stderr)
@@ -54,7 +54,7 @@ _rig() {
   local IFS=$'\\n'
   COMPREPLY=( $(compgen -W "$(rig "[suggest:\${COMP_POINT}]" "\${COMP_LINE}" 2>/dev/null | grep -vE '^(-\\?|-h|/\\?|/h)$')" -- "\${COMP_WORDS[COMP_CWORD]}") )
 }
-complete -F _rig rig rignode rigdotnet
+complete -F _rig rig rig-node rig-net
 
 # \`rig cd\` integration — wrap rig so \`rig cd [query]\` can change the directory.
 rig() {
@@ -69,7 +69,7 @@ rig() {
 const PWSH = `# rig PowerShell completion. Add this line to $PROFILE (don't paste this script):
 #     Invoke-Expression (& rig completion pwsh | Out-String)
 # It calls rig's shared [suggest] protocol — one script completes both rigs.
-Register-ArgumentCompleter -Native -CommandName rig,rignode,rigdotnet -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName rig,rig-node,rig-net -ScriptBlock {
   param($wordToComplete, $commandAst, $cursorPosition)
   rig "[suggest:$cursorPosition]" "$commandAst" 2>$null |
     Where-Object { $_ -notmatch '^(-\\?|-h|/\\?|/h)$' } |

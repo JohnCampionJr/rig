@@ -5,8 +5,8 @@
   "type": "module",
   "bin": {
     "rig": "./dist/cli.js",
-    "rignode": "./dist/rignode.js",
-    "rigdotnet": "./dist/rigdotnet.js"
+    "rig-node": "./dist/rig-node.js",
+    "rig-net": "./dist/rig-net.js"
   },
   "files": [
     "dist",
@@ -24,7 +24,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "build:bin": "pnpm build && node scripts/build-binaries.mjs",
-    "install:rigdev": "bun scripts/install-rigdev.ts",
+    "install:rig-dev": "bun scripts/install-rig-dev.ts",
     "prepublishOnly": "pnpm build",
     "changeset": "changeset",
     "release:version": "changeset version && node scripts/sync-dotnet-version.mjs",
