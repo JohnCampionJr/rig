@@ -5,20 +5,58 @@ using System.Text.Json;
 namespace Rig;
 
 /// <summary>
-/// `rig update [--check]` — update the rig tool itself to the latest published
-/// version (or, with <c>--check</c>, just report whether one's available). On
-/// macOS/Linux the running binary can be replaced in place; on Windows rig.exe is
-/// locked while running, so it hands off to a detached helper that waits for this
-/// process to exit (releasing the lock), then updates — in a new window so the
-/// result is visible. Version logic (pure) is <see cref="LatestStable"/> /
-/// <see cref="IsNewer"/>.
+/// `rig self-update [--check] [--self-only]` — update the rig tool itself to the
+/// latest published version (or, with <c>--check</c>, just report whether one's
+/// available). On macOS/Linux the running binary can be replaced in place; on
+/// Windows rig.exe is locked while running, so it hands off to a detached helper
+/// that waits for this process to exit (releasing the lock), then updates — in a
+/// new window so the result is visible. Version logic (pure) is
+/// <see cref="LatestStable"/> / <see cref="IsNewer"/>.
+///
+/// The two tools ship in lockstep, so by default this also updates the sibling
+/// Node tool (<c>rignode</c>) when it's installed — handed off with
+/// <c>--self-only</c> (see <see cref="SiblingArgs"/>) so it can't bounce back.
+/// <c>--self-only</c> updates just this ecosystem.
 /// </summary>
 internal static class UpdateVerb
 {
     private const string PackageId = "rig";
     private const string FlatIndex = "https://api.nuget.org/v3-flatcontainer/rig/index.json";
 
-    public static int Execute(RigSession session, bool check)
+    public static int Execute(RigSession session, bool check, bool selfOnly)
+    {
+        var selfCode = UpdateSelf(session, check);
+
+        // Keep the lockstep pair in sync: after our own ecosystem, hand off to the
+        // sibling's self-update (always with --self-only, so it never bounces back).
+        if (selfOnly) return selfCode;
+
+        var siblingCode = UpdateSibling(check);
+        return selfCode != 0 ? selfCode : siblingCode;
+    }
+
+    /// <summary>The args for handing off to the sibling tool's self-update. Always
+    /// carries <c>--self-only</c> so the sibling never cross-updates back to us.</summary>
+    public static string[] SiblingArgs(bool check) =>
+        check ? ["self-update", "--check", "--self-only"] : ["self-update", "--self-only"];
+
+    private static int UpdateSibling(bool check)
+    {
+        var tool = Dispatcher.FindNodeTool();
+        if (tool is null)
+        {
+            Ui.Info("Node rig (rignode) isn't installed — nothing else to update.");
+            return 0;
+        }
+
+        var args = SiblingArgs(check);
+        Ui.Info(check ? "Checking the Node rig…" : "Updating the Node rig…");
+        Ui.Command(Path.GetFileName(tool), args);
+        if (Exec.DryRun) return 0;
+        return Dispatcher.RunNodeTool(tool, args);
+    }
+
+    private static int UpdateSelf(RigSession session, bool check)
     {
         var current = CurrentVersion();
 
@@ -42,7 +80,7 @@ internal static class UpdateVerb
         Ui.Info($"A newer rig is available: v{current ?? "?"} → v{latest}.");
         if (check)
         {
-            Ui.Info("Run `rig update` to install it.");
+            Ui.Info("Run `rig self-update` to install it.");
             return 0;
         }
         return RunUpdate(session);

@@ -363,11 +363,13 @@ internal sealed class SetupCommand : Command
 internal sealed class UpdateCommand : Command
 {
     private readonly Option<bool> _check = new("--check") { Description = "Only report whether a newer rig is available; don't install" };
+    private readonly Option<bool> _selfOnly = new("--self-only") { Description = "Update only this ecosystem; don't also update the sibling rig" };
 
-    public UpdateCommand() : base("self-update", "Update rig itself to the latest published version")
+    public UpdateCommand() : base("self-update", "Update rig (and the sibling rig) to the latest published version")
     {
         Options.Add(_check);
-        SetAction(pr => UpdateVerb.Execute(Cli.Session(pr), pr.GetValue(_check)));
+        Options.Add(_selfOnly);
+        SetAction(pr => UpdateVerb.Execute(Cli.Session(pr), pr.GetValue(_check), pr.GetValue(_selfOnly)));
     }
 }
 

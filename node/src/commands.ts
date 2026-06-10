@@ -208,9 +208,22 @@ function standaloneCommands(session: Session) {
   })
   const selfUpdateCmd = define({
     name: 'self-update',
-    description: 'Update rig itself to the latest published version',
-    args: { ...globalArgs, check: { type: 'boolean', description: 'only report, do not update' } },
-    run: async (ctx: GunshiCtx) => setCode(await update(session, { check: Boolean(ctx.values.check) })),
+    description: 'Update rig (and the sibling rig) to the latest published version',
+    args: {
+      ...globalArgs,
+      check: { type: 'boolean', description: 'only report, do not update' },
+      'self-only': {
+        type: 'boolean',
+        description: "update only this ecosystem; don't also update the sibling rig",
+      },
+    },
+    run: async (ctx: GunshiCtx) =>
+      setCode(
+        await update(session, {
+          check: Boolean(ctx.values.check),
+          selfOnly: Boolean(ctx.values['self-only']),
+        }),
+      ),
   })
   const defaultCmd = define({
     name: 'default',

@@ -4,7 +4,33 @@ All notable changes to **rig** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.5.0] - 2026-06-10
+
+Versioned in lockstep with the Node [`@jcamp/rig`](node/) 1.5.0 release.
+
+### Changed
+- **`rig --version` (and `-v`) now names which ecosystem answered** — the .NET
+  tool prints `1.5.0 (.NET)` and the Node tool `1.5.0 (node)`. Because `rig`
+  delegates across ecosystems, the tag always reflects the implementation actually
+  running, so a stray shim or wrong-ecosystem hand-off is obvious at a glance. The
+  .NET tool also drops the noisy `+<git-sha>` build suffix from its version output.
+- **`rig self-update` now updates both ecosystems by default** — because the .NET
+  and Node tools ship in lockstep, `self-update` updates the tool you invoked and
+  then, when the sibling rig is installed, hands off to *its* `self-update` (with
+  `--self-only`, so it can't bounce back). Pass `--self-only` to update just the
+  current ecosystem; `--check` reports both. A missing sibling is a friendly no-op.
+
+### Fixed
+- **`rig test` / `rig coverage` now target the right `dotnet test` CLI per runner
+  (.NET)** — the SDK ships two `dotnet test` parsers and selects between them
+  *solely* by `global.json`'s `test.runner`. On a classic **VSTest** project rig
+  was passing the test project with `--project`, a switch that parser doesn't know;
+  it forwarded the flag to MSBuild and failed with `MSB1001: Unknown switch`. rig
+  now detects the runner ([`TestPlatform`](dotnet/src/Rig/Verbs/TestPlatform.cs))
+  and uses each parser's grammar — positional project for VSTest, `--project` for
+  Microsoft.Testing.Platform — for both `test` and `coverage`. The `--filter`
+  expression (`FullyQualifiedName~…`, `TestCategory=…`) is shared by both runners,
+  so `rig test <name>` / `--filter` works identically across them.
 
 ### Fixed
 - **`rig test` / `rig coverage` now target the right `dotnet test` CLI per runner

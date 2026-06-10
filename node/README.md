@@ -63,7 +63,7 @@ trailing token picks the package (`rig dev api`, fuzzy). Args after `--` are for
 | `doctor` | — | Flag environment problems (node version, pm, install state) |
 | `init` | — | Scaffold a commented `.rig.json` |
 | `setup` | — | Interactive walkthrough to set preferences |
-| `self-update` | — | Update rig itself (`--check` to only report) |
+| `self-update` | — | Update rig **and** the sibling rig (`--self-only` for just this one; `--check` to report) |
 | `completion <shell>` | — | Print shell-completion setup (zsh / bash / pwsh); shared `[suggest]` protocol, cross-ecosystem |
 
 **Global flags:** `--dry-run`/`-n` (print the command, run nothing), `--quiet`/`-q`,
