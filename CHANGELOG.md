@@ -4,15 +4,6 @@ All notable changes to **rig** are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Changed
-- **`rig self-update` now updates both ecosystems by default** — because the .NET
-  and Node tools ship in lockstep, `self-update` updates the tool you invoked and
-  then, when the sibling rig is installed, hands off to *its* `self-update` (with
-  `--self-only`, so it can't bounce back). Pass `--self-only` to update just the
-  current ecosystem; `--check` reports both. A missing sibling is a friendly no-op.
-
 ## [1.5.0] - 2026-06-10
 
 Versioned in lockstep with the Node [`@jcamp/rig`](node/) 1.5.0 release.
@@ -23,6 +14,11 @@ Versioned in lockstep with the Node [`@jcamp/rig`](node/) 1.5.0 release.
   delegates across ecosystems, the tag always reflects the implementation actually
   running, so a stray shim or wrong-ecosystem hand-off is obvious at a glance. The
   .NET tool also drops the noisy `+<git-sha>` build suffix from its version output.
+- **`rig self-update` now updates both ecosystems by default** — because the .NET
+  and Node tools ship in lockstep, `self-update` updates the tool you invoked and
+  then, when the sibling rig is installed, hands off to *its* `self-update` (with
+  `--self-only`, so it can't bounce back). Pass `--self-only` to update just the
+  current ecosystem; `--check` reports both. A missing sibling is a friendly no-op.
 
 ### Fixed
 - **`rig test` / `rig coverage` now target the right `dotnet test` CLI per runner

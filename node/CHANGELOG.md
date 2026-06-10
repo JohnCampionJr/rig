@@ -10,6 +10,14 @@
   stray shim or wrong-ecosystem hand-off is obvious at a glance. The .NET tool
   also drops the noisy `+<git-sha>` build suffix from its version output.
 
+- b47fb59: `rig self-update` now updates **both** ecosystems by default. The .NET and Node
+  tools ship in lockstep at the same version, so updating only one left a
+  version-mismatched pair. `self-update` now updates the tool you invoked and then,
+  when the sibling rig is installed, hands off to *its* `self-update` — always with
+  `--self-only`, so the two can't bounce back and forth. Use `--self-only` to update
+  just the current ecosystem; `--check` reports both. A missing sibling is a friendly
+  no-op. Mirrored in the .NET tool.
+
 ### Patch Changes
 
 - 2c47b79: **.NET tool:** `rig test` / `rig coverage` now pick the correct `dotnet test`
