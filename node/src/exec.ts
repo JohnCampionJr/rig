@@ -29,6 +29,31 @@ export function displayOf(file: string, args: string[]): string {
   return [file, ...args].map(quoteForDisplay).join(' ')
 }
 
+// cmd.exe metacharacters that must be caret-escaped — it parses the command line
+// before the target program does. (Ported from cross-spawn, MIT.)
+const CMD_META = /([()[\]%!^"`<>&|;, *?])/g
+
+/**
+ * A safe `cmd.exe` invocation for a Windows `.cmd`/`.bat` shim. Node's
+ * `{ shell: true }` joins argv into a command *string* without escaping, so a
+ * metacharacter — or a `"` that breaks out of the quoting — in an argument can
+ * inject a second command. Here the program and every argument are MSVCRT-quoted
+ * then caret-escaped, so args reach the shim verbatim and nothing else runs.
+ * Pure — exported for tests.
+ */
+export function winCmdInvocation(file: string, args: string[]): { file: string; args: string[] } {
+  const escArg = (arg: string) => {
+    // Quote so the target program's CommandLineToArgvW sees a single argument…
+    let s = arg.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\*)$/, '$1$1')
+    s = `"${s}"`
+    // …then caret-escape twice — once for cmd's parse of the `/c "…"` line, and
+    // again because the whole command is wrapped in an outer pair of quotes.
+    return s.replace(CMD_META, '^$1').replace(CMD_META, '^$1')
+  }
+  const line = [file.replace(CMD_META, '^$1'), ...args.map(escArg)].join(' ')
+  return { file: process.env.comspec || 'cmd.exe', args: ['/d', '/s', '/c', `"${line}"`] }
+}
+
 /**
  * Spawn a command with an explicit argv (no shell). Echoes, honors --dry-run,
  * and resolves to the child's exit code.
@@ -37,16 +62,19 @@ export async function run(file: string, args: string[], opts: RunOptions = {}): 
   ui.command(opts.display ?? displayOf(file, args))
   if (state.dryRun) return 0
 
-  // On Windows, .cmd/.bat shims (e.g. node_modules/.bin/tsc.cmd) must go through
-  // the shell; elsewhere spawn the binary directly.
-  const useShell = process.platform === 'win32' && /\.(cmd|bat)$/i.test(file)
+  // A Windows .cmd/.bat shim (pnpm.cmd, node_modules/.bin/tsc.cmd, …) can't be
+  // exec'd directly — it needs cmd.exe. Build a safely-quoted invocation instead
+  // of `{ shell: true }`, which would leave the args unescaped and injectable.
+  // Everywhere else, spawn the binary directly with no shell at all.
+  const viaCmd = process.platform === 'win32' && /\.(cmd|bat)$/i.test(file)
+  const inv = viaCmd ? winCmdInvocation(file, args) : { file, args }
 
   return new Promise((resolve) => {
-    const child = spawn(file, args, {
+    const child = spawn(inv.file, inv.args, {
       cwd: opts.cwd,
       env: opts.env ? { ...process.env, ...opts.env } : process.env,
       stdio: 'inherit',
-      shell: useShell,
+      windowsVerbatimArguments: viaCmd,
     })
     child.on('error', (err) => {
       ui.error(`failed to launch ${file}: ${err.message}`)

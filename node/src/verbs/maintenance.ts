@@ -1,6 +1,6 @@
-import { existsSync } from 'node:fs'
+import { existsSync, lstatSync, realpathSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { isAbsolute, join, relative, resolve } from 'node:path'
 import { addCmd, executeCmd, frozenCmd, globalAddCmd, installCmd, uninstallCmd, upgradeCmd } from '../pm.js'
 import { viteplusCommand } from '../viteplus.js'
 import { isDryRun, run } from '../exec.js'
@@ -56,6 +56,16 @@ export async function outdated(session: Session): Promise<number> {
   return run(pm, args, { cwd: root, env: session.env })
 }
 
+/**
+ * True when `target` resolves to a location strictly inside `root` — no `..`
+ * escape, and not `root` itself. Pure (path-only); the caller resolves symlinks
+ * first so an ancestor link can't smuggle the real path out of the tree.
+ */
+export function isWithinRoot(root: string, target: string): boolean {
+  const rel = relative(resolve(root), resolve(target))
+  return rel.length > 0 && !rel.startsWith('..') && !isAbsolute(rel)
+}
+
 /** `rig clean` — remove build-output directories (not node_modules). */
 export async function clean(session: Session): Promise<number> {
   const targets = cleanCandidates(session.workspace.packages).filter((p) => existsSync(p))
@@ -63,16 +73,36 @@ export async function clean(session: Session): Promise<number> {
     ui.info('nothing to clean')
     return 0
   }
+  // Data-loss guard: a recursive delete should never leave the workspace. A
+  // hostile workspace layout (a package dir reaching outside via `..`, or an
+  // allowlisted name that's a symlink) could otherwise point `rm -rf` anywhere.
+  const realRoot = realpathSync(session.workspace.root)
+  let cleaned = 0
   for (const target of targets) {
     const rel = target.slice(session.workspace.root.length + 1) || target
+    let real: string
+    try {
+      if (lstatSync(target).isSymbolicLink()) {
+        ui.warn(`skipping symlink: ${rel}`)
+        continue
+      }
+      real = realpathSync(target)
+    } catch {
+      continue // vanished between the existsSync filter and here
+    }
+    if (!isWithinRoot(realRoot, real)) {
+      ui.warn(`refusing to remove outside the workspace: ${target}`)
+      continue
+    }
     if (isDryRun()) {
       ui.info(`would remove ${rel}`)
       continue
     }
     ui.command(`rm -rf ${rel}`)
     await rm(target, { recursive: true, force: true })
+    cleaned++
   }
-  if (!isDryRun()) ui.success(`cleaned ${targets.length} dir(s)`)
+  if (!isDryRun()) ui.success(`cleaned ${cleaned} dir(s)`)
   return 0
 }
 
