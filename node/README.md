@@ -191,6 +191,24 @@ generated script calls rig's shared `[suggest]` protocol — the *same* one the
 project the request is forwarded to the .NET tool, in a Node project it's
 answered here, whichever `rig` wins on `PATH`.
 
+## Local development (`rigdev`)
+
+To exercise your working tree as a real command without publishing or shadowing
+the installed `rig`, build a standalone dev binary named `rigdev` (requires
+[Bun](https://bun.sh)):
+
+```sh
+cd node
+bun run install:rigdev          # compiles src/cli.ts → ~/.local/bin/rigdev
+# or pick the target dir:
+RIG_DEV_BIN=/some/dir/on/PATH bun run install:rigdev
+```
+
+`rigdev` is delegate-aware just like `rig` (it hands off to the .NET tool in a
+.NET project). It's a snapshot of the source, so re-run `install:rigdev` after
+editing to refresh it (the compile is ~150ms). For one-off runs without
+installing, `bun src/cli.ts <args>` works too.
+
 ## License
 
 MIT © John Campion Jr
