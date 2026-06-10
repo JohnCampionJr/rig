@@ -9,44 +9,28 @@ namespace Rig;
 /// renders HTML in-process via the bundled ReportGenerator.Core (no install).
 /// Collection is runner-aware: MTP test hosts use <c>--coverage</c>; everything
 /// else uses VSTest <c>--collect:"XPlat Code Coverage"</c>. Both produce
-/// Cobertura. Pure bits (<see cref="DetectCollector"/>, <see cref="Render"/>)
-/// are unit-tested.
+/// Cobertura. The runner (and the matching <c>dotnet test</c> CLI grammar) is
+/// resolved by <see cref="TestPlatform"/>. Pure bits
+/// (<see cref="BuildCollectArgs"/>, <see cref="Render"/>) are unit-tested.
 /// </summary>
 internal static class CoverageVerb
 {
     private const StringComparison OIC = StringComparison.OrdinalIgnoreCase;
 
-    public enum CollectorMode { Mtp, VsTest }
-
-    public static CollectorMode DetectCollector(string? testProjectPath, string? configured)
-    {
-        if (string.Equals(configured, "mtp", OIC)) return CollectorMode.Mtp;
-        if (string.Equals(configured, "xplat", OIC)) return CollectorMode.VsTest;
-
-        // auto: MTP if the project opts into Microsoft.Testing.Platform.
-        if (testProjectPath is not null && File.Exists(testProjectPath))
-        {
-            try
-            {
-                var doc = XDocument.Load(testProjectPath);
-                bool On(string el) => string.Equals(
-                    doc.Descendants(el).FirstOrDefault()?.Value?.Trim(), "true", OIC);
-                if (On("EnableMicrosoftTestingPlatform") || On("UseMicrosoftTestingPlatform") || On("EnableMSTestRunner"))
-                    return CollectorMode.Mtp;
-            }
-            catch { /* fall through to VSTest */ }
-        }
-        return CollectorMode.VsTest;
-    }
-
     public static List<string> BuildCollectArgs(
-        CollectorMode mode, string? testProjectPath, string resultsDir, string? settings, string? filter = null)
+        TestPlatform.Runner runner, string? testProjectPath, string resultsDir, string? settings, string? filter = null)
     {
         var args = new List<string> { "test" };
-        if (testProjectPath is not null) { args.Add("--project"); args.Add(testProjectPath); }
+        // Project arg form follows the CLI grammar (same as `rig test`): classic
+        // VSTest takes it positionally, MTP takes `--project`.
+        if (testProjectPath is not null)
+        {
+            if (runner == TestPlatform.Runner.Mtp) args.Add("--project");
+            args.Add(testProjectPath);
+        }
         if (!string.IsNullOrEmpty(filter)) { args.Add("--filter"); args.Add(filter); }
 
-        if (mode == CollectorMode.Mtp)
+        if (runner == TestPlatform.Runner.Mtp)
         {
             args.Add("--");
             args.Add("--coverage");
@@ -112,10 +96,10 @@ internal static class CoverageVerb
         // Work under obj/rig/ — gitignored in every .NET repo, so no root clutter.
         var workDir = Path.Combine(session.Root, "obj", "rig");
         var resultsDir = Path.Combine(workDir, "coverage-results");
-        var mode = DetectCollector(testProject, session.Config.Coverage?.Collector);
+        var runner = TestPlatform.Detect(session.Root, session.Config.Coverage?.Collector);
         var settings = ResolveSettings(session, testProject);
         var filter = name is null ? null : (TestVerb.ShorthandFilter(name) ?? $"FullyQualifiedName~{name}");
-        var args = BuildCollectArgs(mode, testProject, resultsDir, settings, filter);
+        var args = BuildCollectArgs(runner, testProject, resultsDir, settings, filter);
 
         Ui.Command("dotnet", args);
         if (Exec.DryRun) return 0; // nothing to report on; stop after showing the command

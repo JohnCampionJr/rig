@@ -77,20 +77,33 @@ public sealed class VerbLogicTests
     [TestMethod]
     public void Test_args_include_framework_and_filter()
     {
-        var args = TestVerb.BuildTestArgs("/r/T/T.csproj", filter: "FullyQualifiedName~Foo",
+        var args = TestVerb.BuildTestArgs(TestPlatform.Runner.VsTest, "/r/T/T.csproj", filter: "FullyQualifiedName~Foo",
             framework: "net10.0", forwarded: ["--blame"], watch: false);
 
-        args.Should().ContainInConsecutiveOrder("test", "--project", "/r/T/T.csproj");
+        args.Should().ContainInConsecutiveOrder("test", "/r/T/T.csproj");
         args.Should().ContainInConsecutiveOrder("--framework", "net10.0");
         args.Should().ContainInConsecutiveOrder("--filter", "FullyQualifiedName~Foo");
         args.Should().Contain("--blame");
     }
 
     [TestMethod]
-    public void Test_args_omit_framework_and_filter_when_unset()
+    public void Test_args_pass_the_project_positionally_for_vstest()
     {
-        var args = TestVerb.BuildTestArgs("/r/T/T.csproj", filter: null, framework: null, forwarded: [], watch: false);
-        args.Should().Equal("test", "--project", "/r/T/T.csproj");
+        var args = TestVerb.BuildTestArgs(TestPlatform.Runner.VsTest, "/r/T/T.csproj", filter: null, framework: null, forwarded: [], watch: false);
+        // Classic VSTest `dotnet test` has no `--project` switch — positional only.
+        args.Should().Equal("test", "/r/T/T.csproj");
+        args.Should().NotContain("--project");
+    }
+
+    [TestMethod]
+    public void Test_args_pass_the_project_via_flag_for_mtp()
+    {
+        var args = TestVerb.BuildTestArgs(TestPlatform.Runner.Mtp, "/r/T/T.csproj", filter: "FullyQualifiedName~Foo",
+            framework: null, forwarded: [], watch: false);
+        // The MTP `dotnet test` parser names the project with `--project`; the same
+        // `--filter` expression rides along unchanged.
+        args.Should().ContainInConsecutiveOrder("test", "--project", "/r/T/T.csproj");
+        args.Should().ContainInConsecutiveOrder("--filter", "FullyQualifiedName~Foo");
     }
 
     // ---- RebuildVerb.IsSkipped ----
@@ -350,7 +363,7 @@ public sealed class VerbLogicTests
     [TestMethod]
     public void Test_and_build_args_carry_configuration()
     {
-        TestVerb.BuildTestArgs("/r/T/T.csproj", filter: null, framework: null, forwarded: [], watch: false, configuration: "Release")
+        TestVerb.BuildTestArgs(TestPlatform.Runner.VsTest, "/r/T/T.csproj", filter: null, framework: null, forwarded: [], watch: false, configuration: "Release")
             .Should().ContainInConsecutiveOrder("-c", "Release");
     }
 }

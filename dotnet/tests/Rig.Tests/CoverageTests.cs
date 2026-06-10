@@ -33,36 +33,42 @@ public sealed class CoverageTests
     }
 
     [TestMethod]
-    public void Collector_respects_explicit_config()
+    public void Runner_respects_explicit_config()
     {
-        CoverageVerb.DetectCollector(null, "mtp").Should().Be(CoverageVerb.CollectorMode.Mtp);
-        CoverageVerb.DetectCollector(null, "xplat").Should().Be(CoverageVerb.CollectorMode.VsTest);
+        TestPlatform.Detect(root: "/nowhere", "mtp").Should().Be(TestPlatform.Runner.Mtp);
+        TestPlatform.Detect(root: "/nowhere", "xplat").Should().Be(TestPlatform.Runner.VsTest);
+        TestPlatform.Detect(root: "/nowhere", "vstest").Should().Be(TestPlatform.Runner.VsTest);
     }
 
     [TestMethod]
-    public void Collector_auto_detects_mtp_from_project_signals()
+    public void Runner_auto_detects_mtp_from_global_json()
     {
-        using var t = new TempDir();
-        var mtp = t.Write("Mtp/Mtp.csproj", """
-            <Project Sdk="Microsoft.NET.Sdk">
-              <PropertyGroup><EnableMicrosoftTestingPlatform>true</EnableMicrosoftTestingPlatform></PropertyGroup>
-            </Project>
-            """);
-        var vstest = t.Write("Vs/Vs.csproj", """
-            <Project Sdk="Microsoft.NET.Sdk"><PropertyGroup/></Project>
-            """);
+        // The CLI grammar is selected SOLELY by global.json's test.runner — csproj
+        // MTP props do not switch it (verified against the SDK: MSB1001 without it).
+        using var mtp = new TempDir();
+        mtp.Write("global.json", """{ "test": { "runner": "Microsoft.Testing.Platform" } }""");
+        TestPlatform.Detect(mtp.Path, configured: null).Should().Be(TestPlatform.Runner.Mtp);
 
-        CoverageVerb.DetectCollector(mtp, configured: null).Should().Be(CoverageVerb.CollectorMode.Mtp);
-        CoverageVerb.DetectCollector(vstest, configured: null).Should().Be(CoverageVerb.CollectorMode.VsTest);
+        using var vstest = new TempDir();
+        vstest.Write("global.json", """{ "sdk": { "version": "10.0.100" } }""");
+        TestPlatform.Detect(vstest.Path, configured: null).Should().Be(TestPlatform.Runner.VsTest);
+
+        using var none = new TempDir();
+        TestPlatform.Detect(none.Path, configured: null).Should().Be(TestPlatform.Runner.VsTest);
     }
 
     [TestMethod]
-    public void Collect_args_differ_by_mode()
+    public void Collect_args_differ_by_runner()
     {
-        var mtp = CoverageVerb.BuildCollectArgs(CoverageVerb.CollectorMode.Mtp, "/r/T/T.csproj", "/r/res", settings: null);
+        // MTP: --project + coverage requested after the `--` boundary.
+        var mtp = CoverageVerb.BuildCollectArgs(TestPlatform.Runner.Mtp, "/r/T/T.csproj", "/r/res", settings: null);
+        mtp.Should().ContainInConsecutiveOrder("test", "--project", "/r/T/T.csproj");
         mtp.Should().ContainInConsecutiveOrder("--coverage", "--coverage-output-format", "cobertura");
 
-        var vstest = CoverageVerb.BuildCollectArgs(CoverageVerb.CollectorMode.VsTest, "/r/T/T.csproj", "/r/res", settings: "cov.runsettings");
+        // VSTest: positional project (no --project) + the XPlat collector.
+        var vstest = CoverageVerb.BuildCollectArgs(TestPlatform.Runner.VsTest, "/r/T/T.csproj", "/r/res", settings: "cov.runsettings");
+        vstest.Should().ContainInConsecutiveOrder("test", "/r/T/T.csproj");
+        vstest.Should().NotContain("--project");
         vstest.Should().Contain("--collect:\"XPlat Code Coverage\"");
         vstest.Should().ContainInConsecutiveOrder("--settings", "cov.runsettings");
     }
@@ -71,7 +77,7 @@ public sealed class CoverageTests
     public void Collect_args_include_filter_when_scoped()
     {
         var args = CoverageVerb.BuildCollectArgs(
-            CoverageVerb.CollectorMode.Mtp, "/r/T/T.csproj", "/r/res", settings: null, filter: "FullyQualifiedName~Foo");
+            TestPlatform.Runner.Mtp, "/r/T/T.csproj", "/r/res", settings: null, filter: "FullyQualifiedName~Foo");
         args.Should().ContainInConsecutiveOrder("--filter", "FullyQualifiedName~Foo");
     }
 

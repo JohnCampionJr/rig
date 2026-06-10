@@ -44,7 +44,10 @@ internal static class TestVerb
         }
 
         var filter = explicitFilter ?? FilterForName(nameOrFilter, testProject);
-        var args = BuildTestArgs(testProject, filter, framework, forwarded, watch, configuration);
+        // global.json's test.runner fully determines the `dotnet test` CLI grammar;
+        // no per-verb override is needed (or offered) for the test command.
+        var runner = TestPlatform.Detect(session.Root, configured: null);
+        var args = BuildTestArgs(runner, testProject, filter, framework, forwarded, watch, configuration);
 
         IReadOnlyDictionary<string, string>? commandEnv = null;
         if (log)
@@ -61,10 +64,15 @@ internal static class TestVerb
 
     /// <summary>The `dotnet [watch] test …` argument list (pure, so it's testable).
     /// Filter resolution stays in <see cref="Execute"/> (it can prompt); the caller
-    /// passes the already-resolved <paramref name="filter"/>.</summary>
-    public static List<string> BuildTestArgs(string testProject, string? filter, string? framework, string[] forwarded, bool watch, string? configuration = null)
+    /// passes the already-resolved <paramref name="filter"/>.
+    /// The project arg form follows the <paramref name="runner"/>'s CLI grammar:
+    /// classic VSTest takes it positionally (it has no `--project` switch — passing
+    /// one trips `MSB1001`), MTP takes `--project`. `--filter <expr>` is shared.</summary>
+    public static List<string> BuildTestArgs(TestPlatform.Runner runner, string testProject, string? filter, string? framework, string[] forwarded, bool watch, string? configuration = null)
     {
-        var args = new List<string> { "test", "--project", testProject };
+        var args = runner == TestPlatform.Runner.Mtp
+            ? new List<string> { "test", "--project", testProject }
+            : new List<string> { "test", testProject };
         if (!string.IsNullOrEmpty(configuration)) { args.Add("-c"); args.Add(configuration); }
         if (!string.IsNullOrEmpty(framework)) { args.Add("--framework"); args.Add(framework); }
         if (filter is not null) { args.Add("--filter"); args.Add(filter); }

@@ -17,7 +17,7 @@ internal static class InfoVerb
         var solution = ProjectDiscovery.FindSolution(session.Root, session.Config.Solution);
         var testDir = testProject is not null ? Path.GetDirectoryName(testProject) : null;
         var runsettings = CoverageVerb.FindRunsettings(testDir, session.Root);
-        var collector = CoverageVerb.DetectCollector(testProject, session.Config.Coverage?.Collector);
+        var runner = TestPlatform.Detect(session.Root, session.Config.Coverage?.Collector);
 
         var globalConfig = RigSession.GlobalConfigPath();
         var hasGlobal = globalConfig is not null && File.Exists(globalConfig);
@@ -60,7 +60,7 @@ internal static class InfoVerb
             Origin(Set(repoCfg.DefaultProject), Set(globalCfg.DefaultProject)));
         Row("test project", Rel(testProject));
         Row("coverage runsettings", Rel(runsettings));
-        Row("coverage collector", collector == CoverageVerb.CollectorMode.Mtp ? "MTP (--coverage)" : "VSTest (XPlat)");
+        Row("coverage collector", runner == TestPlatform.Runner.Mtp ? "MTP (--coverage)" : "VSTest (XPlat)");
         Row("coverage license", Set(session.Config.Coverage?.License) ? "set (Pro)" : "(none — free engine)",
             Origin(Set(repoCfg.Coverage?.License), Set(globalCfg.Coverage?.License)));
         Row("coverage defaults", CoverageDefaults(session.Config.Coverage),
